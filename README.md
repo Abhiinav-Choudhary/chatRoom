@@ -1,140 +1,101 @@
-📱 Student Lead Management App (Mini CRM)
-📌 Assignment Overview
+# 📱 Student Lead Management App (Mini CRM)
 
-The Student Lead Management App is a React Native based mini CRM application that allows users to manage student leads.
-The app provides basic CRUD functionality with smooth navigation and local data persistence.
+## 📌 Assignment Overview
 
-This project is built using functional components, React Hooks, and React Navigation, following modern React Native practices.
+The **Student Lead Management App** is a React Native based mini CRM application that allows users to manage student leads.  
+The app provides basic **CRUD (Create, Read, Update, Delete)** functionality with smooth navigation and local data persistence.
 
-🚀 Features
+This project is built using **functional components**, **React Hooks**, and **React Navigation**, following modern React Native development practices.
 
-➕ Add new student leads using a form
+---
 
-📋 View list of all leads
+## 🚀 Features
 
-🔍 View detailed information of a lead
+- ➕ Add new student leads using a form  
+- 📋 View list of all leads  
+- 🔍 View detailed information of a lead  
+- 🗑️ Delete a lead with confirmation  
+- 🧭 Navigation between multiple screens  
+- 📦 Local data persistence using AsyncStorage  
 
-🗑️ Delete a lead with confirmation
+---
 
-🧭 Navigation between multiple screens
+## 🧱 App Screens
 
-📦 Local data persistence using AsyncStorage
+### 1️⃣ Lead List Screen
+- Displays all student leads using `FlatList`
+- Button to add a new lead
+- Clickable leads to view detailed information
 
+### 2️⃣ Add Lead Screen
+- Form with input validation
+- Fields: Name, Email, Course, Phone
+- Prevents invalid submissions
 
-🧱 App Screens
+### 3️⃣ Lead Detail Screen
+- Shows complete lead details
+- Option to delete lead with confirmation
 
-Lead List Screen
+---
 
-Displays all student leads using FlatList
+## 🛠️ Tech Stack
 
-Button to add a new lead
+- React Native  
+- Expo (Classic)  
+- React Navigation (Stack Navigation)  
+- AsyncStorage  
+- JavaScript (ES6+)  
 
-Clickable leads to view details
+---
 
-Add Lead Screen
+## 🧠 Concepts Used
 
-Form with input validation
+- Functional Components  
+- React Hooks (`useState`, `useEffect`)  
+- FlatList for optimized list rendering  
+- Navigation using React Navigation  
+- Form validation  
+- Local state management  
+- Persistent storage using AsyncStorage  
 
-Fields: Name, Email, Course, Phone
+---
 
-Prevents invalid submissions
+## 📂 Project Structure
 
-Lead Detail Screen
-
-Shows complete lead details
-
-Option to delete lead
-
-🛠️ Tech Stack
-
-React Native
-
-Expo (Classic)
-
-React Navigation (Stack Navigation)
-
-AsyncStorage
-
-JavaScript (ES6+)
-
-🧠 Concepts Used
-
-Functional Components
-
-React Hooks (useState, useEffect)
-
-FlatList for optimized list rendering
-
-Navigation using React Navigation
-
-Form validation
-
-Local state management
-
-Persistent storage with AsyncStorage
-
-📂 Project Structure
 student-lead-crm/
-│
 ├── App.js
+├── README.md
 ├── src/
-│   ├── screens/
-│   │   ├── LeadListScreen.js
-│   │   ├── AddLeadScreen.js
-│   │   └── LeadDetailScreen.js
-│   │
-│   ├── navigation/
-│   │   └── AppNavigator.js
-│   │
-│   └── components/
+│ ├── screens/
+│ │ ├── LeadListScreen.js
+│ │ ├── AddLeadScreen.js
+│ │ └── LeadDetailScreen.js
+│ │
+│ ├── navigation/
+│ │ └── AppNavigator.js
+│ │
+│ └── components/
 │
 ├── assets/
 └── package.json
 
-▶️ How to Run the App
-1️⃣ Install dependencies
+---
+
+## ▶️ How to Run the App
+
+### 1️⃣ Install dependencies
+```bash
 npm install
 
-2️⃣ Start Expo server
+## 2️⃣ Start Expo development server
 npx expo start
 
-3️⃣ Run on device
+## 3️⃣ Run on device
+
+---
 
 Install Expo Go app on your mobile phone
 
 Scan the QR code from terminal or browser
 
-💾 Data Persistence
-
-The app uses AsyncStorage to store leads locally on the device.
-This ensures that:
-
-Leads are not lost when the app restarts
-
-The app works offline without a backend
-
-🎓 Assignment Requirements Fulfilled
-Requirement	Status
-Add student leads	✅
-Display leads list	✅
-View lead details	✅
-Delete lead	✅
-React Navigation	✅
-FlatList	✅
-Functional components	✅
-React Hooks	✅
-Form validation	✅
-Local state	✅
-AsyncStorage (Bonus)	⭐
-📌 Notes
-
-UI is intentionally kept simple to focus on functionality and logic
-
-The app is designed for academic demonstration and learning purposes
-
-Web and mobile storage are separate due to platform differences
-
-🏁 Conclusion
-
-This project successfully demonstrates a Mini CRM system using React Native with proper navigation, validation, and persistent storage.
-It fulfills all assignment requirements and follows clean coding practices.
+---
