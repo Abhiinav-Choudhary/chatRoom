@@ -1,0 +1,252 @@
+.chatroom-container {
+  display: flex;
+  height: 100vh;
+  background-color: #ffffff;
+  flex-direction: row;
+}
+
+.chat-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid #e5e7eb;
+}
+
+.room-actions {
+  display: flex;
+  gap: 10px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-bottom: 1px solid #d1d5db;
+}
+
+.close-room-btn {
+  padding: 8px 16px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.close-room-btn:hover:not(:disabled) {
+  background-color: #dc2626;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.close-room-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.leave-room-btn {
+  padding: 8px 16px;
+  background-color: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.leave-room-btn:hover {
+  background-color: #4b5563;
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
+}
+
+.messages-container {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background-color: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.message {
+  background-color: white;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 3px solid #3b82f6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.message-sender {
+  color: #1f2937;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.message-text {
+  color: #4b5563;
+  font-size: 14px;
+  margin-left: 6px;
+}
+
+.message-emoji {
+  font-size: 24px;
+  margin-left: 6px;
+}
+
+.message-image-wrapper {
+  margin-top: 8px;
+}
+
+.message-image {
+  max-width: 200px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.message-image:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.poll-box {
+  border: 2px solid #3b82f6;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 8px;
+  background-color: #eff6ff;
+}
+
+.poll-question {
+  display: block;
+  color: #1f2937;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.poll-option {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.poll-option:hover:not(.disabled) {
+  background-color: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.poll-option.disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.input-area {
+  display: flex;
+  padding: 12px 16px;
+  gap: 8px;
+  background-color: white;
+  border-top: 1px solid #e5e7eb;
+  align-items: center;
+}
+
+.icon-btn {
+  padding: 8px;
+  background-color: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.emoji-btn,
+.image-btn,
+.poll-btn {
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emoji-picker-wrapper {
+  position: absolute;
+  bottom: 60px;
+  left: 16px;
+  z-index: 100;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.message-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.message-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.send-btn {
+  padding: 8px 16px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.send-btn:hover {
+  background-color: #2563eb;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.send-btn:active {
+  transform: scale(0.98);
+}
+
+/* Scrollbar styling */
+.messages-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background-color: #f9fafb;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 4px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background-color: #9ca3af;
+}
