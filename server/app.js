@@ -12,9 +12,9 @@ import uploadRoutes from "./routes/upload.routes.js";
 const app = express();
 
 app.use(cors({
-  origin: [
+   origin: [
     "http://localhost:5173",
-    "https://chat-room-pc8v8yckr-abhinavs-projects-3222ddcc.vercel.app"
+    "https://chat-room-mu-umber.vercel.app"
   ],
   credentials: true
 }));

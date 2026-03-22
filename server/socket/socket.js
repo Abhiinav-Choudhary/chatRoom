@@ -41,10 +41,10 @@ const isRateLimited = (
 
 const initSocket =(httpServer)=>{
 io = new Server(httpServer , {
-     cors: {
+   cors: {
     origin: [
       "http://localhost:5173",
-      "https://chat-room-pc8v8yckr-abhinavs-projects-3222ddcc.vercel.app"
+      "https://chat-room-mu-umber.vercel.app"
     ],
     methods: ["GET", "POST"],
     credentials: true
