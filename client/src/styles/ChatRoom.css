@@ -250,3 +250,144 @@
 .messages-container::-webkit-scrollbar-thumb:hover {
   background-color: #9ca3af;
 }
+
+/* ================= RESPONSIVENESS ================= */
+
+/* Tablets */
+@media (max-width: 1024px) {
+  .chatroom-container {
+    flex-direction: column;
+  }
+
+  .chat-wrapper {
+    border-left: none;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .room-actions {
+    padding: 10px 16px;
+    flex-wrap: wrap;
+  }
+
+  .messages-container {
+    padding: 12px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .chatroom-container {
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  .room-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .close-room-btn,
+  .leave-room-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .messages-container {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .message {
+    padding: 10px;
+  }
+
+  .message-text {
+    font-size: 13px;
+  }
+
+  .message-image {
+    max-width: 150px;
+  }
+
+  .input-area {
+    flex-wrap: wrap;
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .message-input {
+    flex: 100%;
+    order: 1;
+  }
+
+  .send-btn {
+    flex: 1;
+    order: 2;
+  }
+
+  .emoji-btn,
+  .image-btn,
+  .poll-btn {
+    flex: 0 0 auto;
+  }
+
+  .emoji-picker-wrapper {
+    left: 10px;
+    right: 10px;
+    bottom: 70px;
+  }
+}
+
+/* Small devices */
+@media (max-width: 480px) {
+  .message {
+    border-radius: 6px;
+  }
+
+  .message-sender {
+    font-size: 13px;
+  }
+
+  .message-text {
+    font-size: 12px;
+  }
+
+  .send-btn {
+    padding: 8px;
+    font-size: 13px;
+  }
+
+  .close-room-btn,
+  .leave-room-btn {
+    font-size: 13px;
+    padding: 8px;
+  }
+}
+
+/* Hide mobile actions by default */
+.mobile-room-actions {
+  display: none;
+  gap: 6px;
+}
+
+/* Mobile behavior */
+@media (max-width: 768px) {
+  
+  /* Hide top buttons */
+  .room-actions {
+    display: none;
+  }
+
+  /* Show bottom buttons */
+  .mobile-room-actions {
+    display: flex;
+    align-items: center;
+  }
+
+  .mobile-room-actions .close-room-btn,
+  .mobile-room-actions .leave-room-btn {
+    padding: 6px 8px;
+    font-size: 14px;
+  }
+}

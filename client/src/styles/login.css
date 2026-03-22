@@ -84,3 +84,88 @@
 .register-link:hover {
   text-decoration: underline;
 }
+
+/* ================= RESPONSIVENESS ================= */
+
+/* Tablets */
+@media (max-width: 1024px) {
+  .login-box {
+    max-width: 400px;
+    padding: 28px;
+  }
+
+  .login-title {
+    font-size: 22px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 16px;
+    align-items: flex-start;
+  }
+
+  .login-box {
+    max-width: 100%;
+    padding: 24px 20px;
+    border-radius: 6px;
+    margin-top: 40px;
+  }
+
+  .login-title {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  .login-form {
+    gap: 14px;
+  }
+
+  .login-input {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  .login-button {
+    padding: 10px 0;
+    font-size: 15px;
+  }
+
+  .login-footer {
+    font-size: 13px;
+  }
+}
+
+/* Small devices */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 12px;
+  }
+
+  .login-box {
+    padding: 20px 16px;
+  }
+
+  .login-title {
+    font-size: 18px;
+  }
+
+  .login-input {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  .login-button {
+    font-size: 14px;
+    padding: 9px 0;
+  }
+
+  .login-footer {
+    font-size: 12px;
+  }
+
+  .error-message {
+    font-size: 13px;
+  }
+}

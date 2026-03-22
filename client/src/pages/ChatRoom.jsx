@@ -113,6 +113,7 @@ useEffect(() => {
     });
 
     setInput("");
+    setShowEmojiPicker(false);
   };
 
 
@@ -355,6 +356,37 @@ socket.off("receive_message");
           
 
           <button className="send-btn" onClick={sendMessage}>Send</button>
+
+          {/* MOBILE ACTION BUTTONS */}
+<div className="mobile-room-actions">
+  {room &&
+    user &&
+    room.createdBy.toString() === user._id.toString() && (
+      <button
+        onClick={handleCloseRoom}
+        disabled={closing}
+        className="close-room-btn"
+      >
+        ✖
+      </button>
+    )}
+
+  {room &&
+    user &&
+    (
+      (typeof room.createdBy === "object"
+        ? room.createdBy._id
+        : room.createdBy
+      ).toString() !== user._id.toString()
+    ) && (
+      <button
+        onClick={handleLeaveRoom}
+        className="leave-room-btn"
+      >
+        🚪
+      </button>
+    )}
+</div>
         </div>
       </div>
     </div>
