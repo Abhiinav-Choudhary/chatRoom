@@ -1,101 +1,181 @@
-# 📱 Student Lead Management App (Mini CRM)
+# 💬 ChatRoom – Full Stack Real-Time Chat Application
 
-## 📌 Assignment Overview
-
-The **Student Lead Management App** is a React Native based mini CRM application that allows users to manage student leads.  
-The app provides basic **CRUD (Create, Read, Update, Delete)** functionality with smooth navigation and local data persistence.
-
-This project is built using **functional components**, **React Hooks**, and **React Navigation**, following modern React Native development practices.
+A full-stack real-time chat application built using the **MERN stack + Socket.io**, supporting messaging, emojis, image sharing, and live polls.
 
 ---
 
 ## 🚀 Features
 
-- ➕ Add new student leads using a form  
-- 📋 View list of all leads  
-- 🔍 View detailed information of a lead  
-- 🗑️ Delete a lead with confirmation  
-- 🧭 Navigation between multiple screens  
-- 📦 Local data persistence using AsyncStorage  
+* 🔐 **Authentication**
 
----
+  * Register & Login (JWT-based authentication)
+  * Secure routes with middleware
 
-## 🧱 App Screens
+* 💬 **Real-Time Chat**
 
-### 1️⃣ Lead List Screen
-- Displays all student leads using `FlatList`
-- Button to add a new lead
-- Clickable leads to view detailed information
+  * Instant messaging using Socket.io
+  * Multiple users in a room
+  * Live updates without refresh
 
-### 2️⃣ Add Lead Screen
-- Form with input validation
-- Fields: Name, Email, Course, Phone
-- Prevents invalid submissions
+* 😀 **Emoji Support**
 
-### 3️⃣ Lead Detail Screen
-- Shows complete lead details
-- Option to delete lead with confirmation
+  * Emoji picker integration
+  * Multiple emoji selection
+
+* 🖼️ **Image Sharing**
+
+  * Upload and send images in chat
+  * Stored on server
+
+* 📊 **Live Poll System**
+
+  * Create polls inside chat
+  * Real-time voting updates
+  * One vote per user
+
+* 👑 **Room Management**
+
+  * Room creator can **close room**
+  * Users can **leave room**
+  * Active users list (sidebar)
+
+* 📱 **Responsive UI**
+
+  * Works on mobile, tablet, desktop
+  * Hamburger sidebar for small screens
+  * Bottom-sheet modals for mobile
 
 ---
 
 ## 🛠️ Tech Stack
 
-- React Native  
-- Expo (Classic)  
-- React Navigation (Stack Navigation)  
-- AsyncStorage  
-- JavaScript (ES6+)  
+### Frontend
 
----
+* React.js (Vite)
+* CSS (custom responsive design)
+* Axios
+* Socket.io-client
+* Emoji Picker
 
-## 🧠 Concepts Used
+### Backend
 
-- Functional Components  
-- React Hooks (`useState`, `useEffect`)  
-- FlatList for optimized list rendering  
-- Navigation using React Navigation  
-- Form validation  
-- Local state management  
-- Persistent storage using AsyncStorage  
+* Node.js
+* Express.js
+* MongoDB + Mongoose
+* Socket.io
+* Multer (image uploads)
+* JWT Authentication
 
 ---
 
 ## 📂 Project Structure
 
-student-lead-crm/
-├── App.js
-├── README.md
-├── src/
-│ ├── screens/
-│ │ ├── LeadListScreen.js
-│ │ ├── AddLeadScreen.js
-│ │ └── LeadDetailScreen.js
-│ │
-│ ├── navigation/
-│ │ └── AppNavigator.js
-│ │
-│ └── components/
+```
+chatRoom/
 │
-├── assets/
-└── package.json
+├── client/        # Frontend (React)
+│
+├── server/        # Backend (Node + Express)
+│
+├── README.md
+└── .gitignore
+```
 
 ---
 
-## ▶️ How to Run the App
+## ⚙️ Installation & Setup
 
-### 1️⃣ Install dependencies
-```bash
+### 1️⃣ Clone the repository
+
+```
+git clone https://github.com/YOUR_USERNAME/chatRoom.git
+cd chatRoom
+```
+
+---
+
+### 2️⃣ Setup Backend
+
+```
+cd server
 npm install
+```
 
-## 2️⃣ Start Expo development server
-npx expo start
+Create a `.env` file inside `/server`:
 
-## 3️⃣ Run on device
+```
+PORT=5000
+MONGO_URI=your_mongodb_connection
+JWT_SECRET=your_secret_key
+```
+
+Run backend:
+
+```
+npm run dev
+```
 
 ---
 
-Install Expo Go app on your mobile phone
+### 3️⃣ Setup Frontend
 
-Scan the QR code from terminal or browser
+```
+cd client
+npm install
+npm run dev
+```
 
 ---
+
+## 🌐 Environment Variables
+
+### Backend (`/server/.env`)
+
+* `PORT`
+* `MONGO_URI`
+* `JWT_SECRET`
+
+---
+
+## 🧠 Key Concepts Used
+
+* Real-time communication using **WebSockets (Socket.io)**
+* REST API design with **Express**
+* Authentication using **JWT**
+* File uploads using **Multer**
+* State management using **React Context API**
+* Responsive UI with modern CSS
+
+---
+
+## 📸 Screenshots (Add Later)
+
+* Chat Room UI
+* Poll Creation
+* Mobile View
+* Sidebar
+
+---
+
+## 🚀 Future Improvements
+
+* ✅ Typing indicators
+* ✅ Online/offline status
+* ✅ Message read receipts
+* 🔄 File sharing (PDF, docs)
+* 🔄 Notifications system
+
+---
+
+## 👨‍💻 Author
+
+**Abhinav Chaudhary**
+
+* 💼 Full Stack Developer (MERN + AI/ML)
+* 📸 Instagram: Masala_bytes
+
+---
+
+## ⭐ If you like this project
+
+Give it a ⭐ on GitHub and share feedback!
