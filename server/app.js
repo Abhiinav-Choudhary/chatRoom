@@ -11,12 +11,13 @@ import uploadRoutes from "./routes/upload.routes.js";
 
 const app = express();
 
-app.use(
-  cors({
-    origin: "https://chat-room-pc8v8yckr-abhinavs-projects-3222ddcc.vercel.app", // frontend URL
-    credentials: true,               // ALLOW COOKIES
-  })
-);
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://chat-room-pc8v8yckr-abhinavs-projects-3222ddcc.vercel.app"
+  ],
+  credentials: true
+}));
 app.use(express.json());
 app.use(cookieParser());
 
