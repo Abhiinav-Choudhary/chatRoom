@@ -113,6 +113,7 @@ function ChatRoom() {
     });
 
     setInput("");
+    setShowEmojiPicker(false);
   };
 
   // ✅ Poll
@@ -191,109 +192,117 @@ function ChatRoom() {
             : room?.createdBy
         }
       />
-
+      {/* CHAT AREA */}
       <div className="chat-wrapper">
         <div className="room-actions">
-          {room &&
-            user &&
-            room.createdBy.toString() === user._id.toString() && (
-              <button
-                onClick={handleCloseRoom}
-                disabled={closing}
-                className="close-room-btn"
-              >
-                {closing ? "Closing..." : "Close Room"}
-              </button>
-            )}
-
-          {room &&
-            user &&
+          {room && user && room.createdBy.toString() === user._id.toString() && (
+            <button
+              onClick={handleCloseRoom}
+              disabled={closing}
+              className="close-room-btn"
+            >
+              {closing ? "Closing..." : "Close Room"}
+            </button>
+          )}
+          {room && user && (
             (typeof room.createdBy === "object"
               ? room.createdBy._id
               : room.createdBy
             ).toString() !== user._id.toString() && (
-              <button
-                onClick={handleLeaveRoom}
-                className="leave-room-btn"
-              >
+              <button onClick={handleLeaveRoom} className="leave-room-btn">
                 Leave Room
               </button>
-            )}
+            )
+          )}
         </div>
-
         <div className="messages-container">
           {messages.map((msg) => (
             <div key={msg._id} className="message">
-              <strong>{msg.sender.username}:</strong>
-
-              {msg.type === "text" && <span> {msg.content}</span>}
-
-              {msg.type === "image" && (
-                <img src={msg.content} alt="uploaded" width="200" />
+              <strong className="message-sender">{msg.sender.username}:</strong>
+              {msg.type === "text" && (
+                <span className="message-text"> {msg.content}</span>
               )}
-
-              {msg.type === "poll" && (
-                <div>
-                  <strong>{msg.poll.question}</strong>
-                  {msg.poll.options.map((opt, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() =>
-                        socket.emit("vote_poll", {
-                          messageId: msg._id,
-                          optionIndex: idx,
-                        })
-                      }
-                    >
-                      {opt.option} ({opt.votes.length})
-                    </button>
-                  ))}
+              {msg.type === "emoji" && (
+                <span className="message-emoji"> {msg.content} </span>
+              )}
+              {msg.type === "image" && (
+                <div className="message-image-wrapper">
+                  <img src={msg.content} alt="uploaded" className="message-image" />
                 </div>
               )}
+              {msg.type === "poll" && (() => {
+                const hasVoted = msg.poll.options.some(opt => opt.votes.includes(user._id));
+                return (
+                  <div className="poll-box">
+                    <strong className="poll-question">{msg.poll.question}</strong>
+                    {msg.poll.options.map((opt, idx) => (
+                      <button key={idx} className={`poll-option ${hasVoted ? 'disabled' : ''}`} disabled={hasVoted} onClick={() => socket.emit("vote_poll", { messageId: msg._id, optionIndex: idx })}>
+                        {opt.option} ({opt.votes.length})
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           ))}
           <div ref={messagesEndRef} />
         </div>
-
         <div className="input-area">
-          <button onClick={() => setShowEmojiPicker((p) => !p)}>😀</button>
-
+          <button onClick={() => setShowEmojiPicker(prev => !prev)} className="icon-btn emoji-btn">
+            😀
+          </button>
+          {/* Emoji Picker */}
           {showEmojiPicker && (
-            <EmojiPicker onEmojiClick={addEmojiToInput} />
+            <div className="emoji-picker-wrapper">
+              <EmojiPicker onEmojiClick={addEmojiToInput} />
+            </div>
           )}
-
-          <button onClick={() => imageInputRef.current.click()}>
+          <button className="icon-btn image-btn" onClick={() => imageInputRef.current.click()}>
             🖼
           </button>
-
-          <input
-            type="file"
-            hidden
-            ref={imageInputRef}
-            onChange={handleImageUpload}
-          />
-
-          <button onClick={() => setShowPollModal(true)}>📊</button>
-
+          <input type="file" accept="image/*" ref={imageInputRef} style={{ display: "none" }} onChange={handleImageUpload} />
+          <button className="icon-btn poll-btn" onClick={() => setShowPollModal(true)}>
+            📊
+          </button>
           {showPollModal && (
-            <CreatePollModal
-              onClose={() => setShowPollModal(false)}
-              onCreate={handleCreatePoll}
-            />
+            <CreatePollModal onClose={() => setShowPollModal(false)} onCreate={handleCreatePoll} />
           )}
+          {/* MOBILE ACTION BUTTONS */}
+<div className="mobile-room-actions">
+  {room &&
+    user &&
+    room.createdBy.toString() === user._id.toString() && (
+      <button
+        onClick={handleCloseRoom}
+        disabled={closing}
+        className="close-room-btn"
+      >
+        ✖
+      </button>
+    )}
 
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            placeholder="Type a message..."
-          />
-
-          <button onClick={sendMessage}>Send</button>
+  {room &&
+    user &&
+    (
+      (typeof room.createdBy === "object"
+        ? room.createdBy._id
+        : room.createdBy
+      ).toString() !== user._id.toString()
+    ) && (
+      <button
+        onClick={handleLeaveRoom}
+        className="leave-room-btn"
+      >
+        🚪
+      </button>
+    )}
+</div>
+          <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Type a message..." className="message-input" onKeyDown={(e) => e.key === "Enter" && sendMessage()} />
+          <button className="send-btn" onClick={sendMessage}>Send</button>
         </div>
       </div>
     </div>
-  );
+     );
 }
 
 export default ChatRoom;
