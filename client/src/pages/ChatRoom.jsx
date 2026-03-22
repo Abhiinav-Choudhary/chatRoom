@@ -33,7 +33,7 @@ const scrollToBottom = () => {
   const fetchRoom = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5000/api/chatroom/${roomId}`,
+        `https://chatroom-lgj7.onrender.com/api/chatroom/${roomId}`,
         { credentials: "include" }
       );
       const data = await res.json();
@@ -143,7 +143,7 @@ const handleImageUpload = async (e) => {
 
   try {
     const res = await fetch(
-      "http://localhost:5000/api/upload/image",
+      "https://chatroom-lgj7.onrender.com/api/upload/image",
       {
         method: "POST",
         credentials: "include",
