@@ -13,7 +13,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173", // frontend URL
+    origin: "https://chat-room-pc8v8yckr-abhinavs-projects-3222ddcc.vercel.app", // frontend URL
     credentials: true,               // ALLOW COOKIES
   })
 );
