@@ -18,7 +18,7 @@ export const apiLimiter = rateLimit({
 =========================== */
 export const createRoomLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5,                  // only 5 rooms per hour
+  max: 20,                  // only 20 rooms per hour
   message: {
     error: "Room creation limit reached"
   }
