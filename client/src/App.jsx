@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   BrowserRouter,
@@ -16,14 +15,20 @@ import { useAuth } from "./contexts/AuthContext";
 function App() {
   const { user, loading } = useAuth();
 
+  // Avoid rendering protected routes before the auth check finishes.
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="app-loading-screen" role="status" aria-live="polite">
+        <span className="app-loading-spinner" aria-hidden="true" />
+        <p>Loading your workspace...</p>
+      </div>
+    );
   }
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* Home */}
+        {/* Redirect the home route based on authentication status. */}
         <Route
           path="/"
           element={
@@ -34,14 +39,13 @@ function App() {
           }
         />
 
-        {/* Public routes */}
+        {/* Public routes: authenticated users go to their profile. */}
         <Route
           path="/login"
           element={
             user ? <Navigate to="/profile" replace /> : <Login />
           }
         />
-
         <Route
           path="/register"
           element={
@@ -49,14 +53,13 @@ function App() {
           }
         />
 
-        {/* Protected routes */}
+        {/* Protected routes. */}
         <Route
           path="/profile"
           element={
             user ? <Profile /> : <Navigate to="/login" replace />
           }
         />
-
         <Route
           path="/chatroom/:roomId"
           element={
@@ -64,7 +67,7 @@ function App() {
           }
         />
 
-        {/* Unknown routes */}
+        {/* Unknown routes return to the appropriate home destination. */}
         <Route
           path="*"
           element={<Navigate to="/" replace />}
