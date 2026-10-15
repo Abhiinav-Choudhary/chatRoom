@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://chatroom-lgj7.onrender.com/api",
+  // baseURL: "https://chatroom-lgj7.onrender.com/api",
+  baseURL: `${import.meta.env.VITE_API_URL}/api`,
   withCredentials: true // VERY IMPORTANT (cookies)
 });
 

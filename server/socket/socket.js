@@ -1,16 +1,18 @@
-import {Server} from "socket.io"
-import jwt from "jsonwebtoken"
-import User from "../models/user.model.js"
-import cookie from "cookie"
+
+import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
+import cookie from "cookie";
+
+import User from "../models/user.model.js";
 import ChatRoom from "../models/ChatRoom.js";
 import Message from "../models/message.model.js";
 
-
 let io;
 
-const roomUsers = {}; 
-const socketRateMap = {};
+const roomUsers = Object.create(null);
+const socketRateMap = Object.create(null);
 
+// Rate limiter for individual socket events
 const isRateLimited = (
   socket,
   event,
@@ -21,13 +23,17 @@ const isRateLimited = (
   const now = Date.now();
 
   if (!socketRateMap[key]) {
-    socketRateMap[key] = { count: 1, lastReset: now };
+    socketRateMap[key] = {
+      count: 1,
+      lastReset: now,
+    };
+
     return false;
   }
 
   const data = socketRateMap[key];
 
-  if (now - data.lastReset > windowMs) {
+  if (now - data.lastReset >= windowMs) {
     data.count = 1;
     data.lastReset = now;
     return false;
@@ -38,276 +44,380 @@ const isRateLimited = (
   return data.count > limit;
 };
 
-
-const initSocket =(httpServer)=>{
-io = new Server(httpServer , {
-   cors: {
-    origin: [
-      "http://localhost:5173",
-      "https://chat-room-mu-umber.vercel.app"
-    ],
-    methods: ["GET", "POST"],
-    credentials: true
+// Get currently connected users in a room
+const getRoomUsers = (roomId) => {
+  if (!roomUsers[roomId]) {
+    return [];
   }
-})
 
+  return Array.from(roomUsers[roomId].values());
+};
 
-io.use(async(socket , next)=>{
+// Broadcast the current room users
+const broadcastRoomUsers = (roomId) => {
+  io.to(roomId).emit("room_users", getRoomUsers(roomId));
+};
 
-   try {
-     const cookieHeader = socket.handshake.headers.cookie 
+// Remove a socket from room presence tracking
+const removeSocketFromRooms = (socket) => {
+  for (const roomId of Object.keys(roomUsers)) {
+    if (roomUsers[roomId].has(socket.id)) {
+      roomUsers[roomId].delete(socket.id);
+      broadcastRoomUsers(roomId);
 
-    if(!cookieHeader){
+      if (roomUsers[roomId].size === 0) {
+        delete roomUsers[roomId];
+      }
+    }
+  }
+};
+
+// Initialize Socket.IO
+const initSocket = (httpServer) => {
+  io = new Server(httpServer, {
+    cors: {
+      origin: [
+        "http://localhost:5173",
+        "https://chat-room-mu-umber.vercel.app",
+      ],
+      methods: ["GET", "POST"],
+      credentials: true,
+    },
+  });
+
+  // Authenticate using the JWT cookie
+  io.use(async (socket, next) => {
+    try {
+      const cookieHeader = socket.handshake.headers.cookie;
+
+      if (!cookieHeader) {
         return next(new Error("No cookies found"));
-    }
+      }
 
-    const cookies = cookie.parse(cookieHeader)
-    const token = cookies.token
-    if(!token){
+      const cookies = cookie.parse(cookieHeader);
+      const token = cookies.token;
+
+      if (!token) {
         return next(new Error("No token found"));
+      }
+
+      if (!process.env.JWT_SECRET) {
+        return next(new Error("Authentication configuration error"));
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      const user = await User.findById(decoded.userId).select(
+        "-password"
+      );
+
+      if (!user) {
+        return next(new Error("Invalid user"));
+      }
+
+      socket.user = user;
+
+      next();
+    } catch (error) {
+      console.error("Socket authentication failed:", error.message);
+      next(new Error("Authentication failed"));
     }
+  });
 
-    const decoded = jwt.verify(token  , process.env.JWT_SECRET)
+  // Every event handler is registered directly on connection
+  io.on("connection", (socket) => {
+    console.log("User connected:", socket.user.username);
 
-    const user = await User.findById(decoded.userId).select("-password")
+    // JOIN ROOM
+    socket.on("join_room", async (payload = {}) => {
+      if (isRateLimited(socket, "join_room", 3, 10000)) {
+        socket.emit("error", "Too many join attempts");
+        return;
+      }
 
-    if(!user){
-        return next(new Error("Invalid user"))
-    }
+      try {
+        const roomId = payload?.roomId;
 
-    socket.user = user;
-    next()
-   } catch (error) {
-    return next(new Error("Authentication failed"));
-   }
-})
+        if (!roomId) {
+          socket.emit("error", "Room ID is required");
+          return;
+        }
 
-io.on("connection",(socket)=>{
-  console.log("User connected", socket.user.username)
-  
+        const room = await ChatRoom.findById(roomId);
 
+        if (!room || !room.isActive) {
+          socket.emit("error", "Room is closed or does not exist");
+          return;
+        }
 
-socket.on("join_room", async ({ roomId }) => {
+        const normalizedRoomId = room._id.toString();
 
-     if (isRateLimited(socket, "join_room", 3, 10000)) {
-    socket.emit("error", "Too many join attempts");
-    return;
-  }
+        // Join only once to avoid duplicate processing
+        if (socket.rooms.has(normalizedRoomId)) {
+          socket.emit("joined_room", {
+            roomId: normalizedRoomId,
+          });
+          return;
+        }
 
-  try {
-    if (!roomId) {
-      socket.emit("error", "Room ID is required");
-      return;
-    }
+        socket.join(normalizedRoomId);
 
-    const room = await ChatRoom.findById(roomId);
-    if (!room || !room.isActive) {
-      socket.emit("error", "Room is closed or does not exist");
-      return;
-    }
+        if (!roomUsers[normalizedRoomId]) {
+          roomUsers[normalizedRoomId] = new Map();
+        }
 
-    // Join socket.io room
-    socket.join(roomId);
+        roomUsers[normalizedRoomId].set(socket.id, {
+          userId: socket.user._id.toString(),
+          username: socket.user.username,
+        });
 
-    // Presence tracking
-    if (!roomUsers[roomId]) {
-      roomUsers[roomId] = new Map();
-    }
+        // Load the latest 50 messages, displayed oldest to newest
+        const messages = await Message.find({
+          roomId: normalizedRoomId,
+        })
+          .sort({ createdAt: -1 })
+          .limit(50)
+          .populate("sender", "username")
+          .then((items) => items.reverse());
 
-    roomUsers[roomId].set(socket.id, {
-      userId: socket.user._id,
-      username: socket.user.username
+        socket.emit("previous_messages", messages);
+
+        broadcastRoomUsers(normalizedRoomId);
+
+        socket.emit("joined_room", {
+          roomId: normalizedRoomId,
+        });
+      } catch (error) {
+        console.error("Join room error:", error);
+        socket.emit("error", "Failed to join room");
+      }
     });
 
-    // 🔹 LOAD PREVIOUS MESSAGES (NEW PART)
-    const messages = await Message.find({ roomId })
-      .sort({ createdAt: 1 })   // oldest → newest
-      .limit(50)
-      .populate("sender", "username");
+    // LEAVE ROOM
+    socket.on("leave_room", async (payload = {}) => {
+      try {
+        const roomId = payload?.roomId;
 
-    // Send chat history ONLY to joining user
-    socket.emit("previous_messages", messages);
+        if (!roomId) return;
 
-    // Update sidebar for everyone
-    const users = Array.from(roomUsers[roomId].values());
-    io.to(roomId).emit("room_users", users);
+        const normalizedRoomId = roomId.toString();
 
-    socket.emit("joined_room", { roomId });
-  } catch (err) {
-    console.error(err);
-    socket.emit("error", "Failed to join room");
-  }
+        // Only leave rooms this socket has joined
+        if (!socket.rooms.has(normalizedRoomId)) return;
 
+        socket.leave(normalizedRoomId);
 
-  socket.on("leave_room", async ({ roomId }) => {
-  socket.leave(roomId);
+        if (roomUsers[normalizedRoomId]) {
+          roomUsers[normalizedRoomId].delete(socket.id);
 
-  // 🔥 Recalculate users in room
-  const sockets = await io.in(roomId).fetchSockets();
-
-  const users = sockets.map((s) => ({
-    userId: s.user._id.toString(),
-    username: s.user.username
-  }));
-
-  // 🔥 Emit updated users list
-  io.to(roomId).emit("room_users", users);
-});
-
-
-socket.on("send_message", async ({ roomId, type = "text", content, file, poll }) => {
-
-  try {
-
-  if (isRateLimited(socket, "send_message", 5, 3000)) {
-   socket.emit("socket_error", "message");
-    return;
-  }
-
-  
-   if (!roomId) {
-  socket.emit("socket_error", "message");
-  return;
-}
-
-if (type === "text" || type === "emoji") {
-  if (!content || !content.trim()) {
-    socket.emit("socket_error", "message");
-    return;
-  }
-}
-
-if (type === "image" || type === "file") {
-  if (!content) {
-    socket.emit("socket_error", "message");
-    return;
-  }
-}
-
-if (type === "poll") {
-  if (!poll || !poll.question || poll.options.length < 2) {
-    socket.emit("socket_error", "message");
-    return;
-  }
-}
-
-
-    const room = await ChatRoom.findById(roomId);
-    if (!room || !room.isActive) {
-     socket.emit("socket_error", "message");
-      return;
-    }
-
-   
-    if (
-      !roomUsers[roomId] ||
-      !roomUsers[roomId].has(socket.id)
-    ) {
-      socket.emit("socket_error", "message");
-      return;
-    }
-
-    
-   const message = await Message.create({
-  roomId,
-  sender: socket.user._id,
-  type,
-  content,
-  file,
-  poll
-});
-
-
-  
-    const populatedMessage = await message.populate(
-      "sender",
-      "username"
-    );
-
-   
-   io.to(roomId).emit("receive_message", {
-  _id: populatedMessage._id,
-  roomId,
-  type: populatedMessage.type,
-  content: populatedMessage.content,
-  file: populatedMessage.file,
-  poll: populatedMessage.poll,
-  sender: populatedMessage.sender,
-  createdAt: populatedMessage.createdAt
-});
-
-  } catch (err) {
-    console.error(err);
-    socket.emit("socket_error", "message");
-  }
-});
-
-
-socket.on("vote_poll", async ({ messageId, optionIndex }) => {
-  try {
-    const message = await Message.findById(messageId);
-    if (!message || message.type !== "poll") return;
-
-    const userId = socket.user._id.toString();
-
-    
-    const alreadyVoted = message.poll.options.some(opt =>
-      opt.votes.some(v => v.toString() === userId)
-    );
-
-    if (alreadyVoted) return;
-
-    
-    message.poll.options[optionIndex].votes.push(socket.user._id);
-    await message.save();
-
-   
-    io.to(message.roomId.toString()).emit("poll_updated", {
-      messageId: message._id.toString(),
-      poll: message.poll
-    });
-  } catch (err) {
-    console.error("Poll vote error", err);
-  }
-});
-
-
-
-    socket.on("disconnect", () => {
-      for (const roomId in roomUsers) {
-        if (roomUsers[roomId].has(socket.id)) {
-          roomUsers[roomId].delete(socket.id);
-
-          const users = Array.from(roomUsers[roomId].values());
-          io.to(roomId).emit("room_users", users);
-
-         
-          if (roomUsers[roomId].size === 0) {
-            delete roomUsers[roomId];
+          if (roomUsers[normalizedRoomId].size === 0) {
+            delete roomUsers[normalizedRoomId];
+          } else {
+            broadcastRoomUsers(normalizedRoomId);
           }
         }
+      } catch (error) {
+        console.error("Leave room error:", error);
       }
- 
-        Object.keys(socketRateMap).forEach(key => {
-  if (key.startsWith(socket.id)) {
-    delete socketRateMap[key];
-  }
-});
-
-
-      console.log("User disconnected:", socket.user.username);
     });
 
-});
+    // SEND MESSAGE
+    socket.on("send_message", async (payload = {}) => {
+      try {
+        if (isRateLimited(socket, "send_message", 5, 3000)) {
+          socket.emit("socket_error", "message");
+          return;
+        }
 
+        const {
+          roomId,
+          type = "text",
+          content,
+          file,
+          poll,
+        } = payload;
 
-});
+        if (!roomId) {
+          socket.emit("socket_error", "message");
+          return;
+        }
 
+        const normalizedRoomId = roomId.toString();
+
+        // Validate the message type
+        const allowedTypes = [
+          "text",
+          "emoji",
+          "image",
+          "file",
+          "poll",
+        ];
+
+        if (!allowedTypes.includes(type)) {
+          socket.emit("socket_error", "message");
+          return;
+        }
+
+        if (
+          (type === "text" || type === "emoji") &&
+          (typeof content !== "string" || !content.trim())
+        ) {
+          socket.emit("socket_error", "message");
+          return;
+        }
+
+        if (
+          (type === "image" || type === "file") &&
+          !content &&
+          !file
+        ) {
+          socket.emit("socket_error", "message");
+          return;
+        }
+
+        if (
+          type === "poll" &&
+          (
+            !poll ||
+            typeof poll.question !== "string" ||
+            !poll.question.trim() ||
+            !Array.isArray(poll.options) ||
+            poll.options.length < 2
+          )
+        ) {
+          socket.emit("socket_error", "message");
+          return;
+        }
+
+        // The sender must have joined this room
+        if (
+          !socket.rooms.has(normalizedRoomId) ||
+          !roomUsers[normalizedRoomId]?.has(socket.id)
+        ) {
+          socket.emit("socket_error", "message");
+          return;
+        }
+
+        const room = await ChatRoom.findById(normalizedRoomId);
+
+        if (!room || !room.isActive) {
+          socket.emit("socket_error", "message");
+          return;
+        }
+
+        const message = await Message.create({
+         roomId: normalizedRoomId,
+          sender: socket.user._id,
+           type,
+           content,
+          fileName: payload.fileName,
+         fileSize: payload.fileSize,
+         poll,
+         });
+
+        const populatedMessage = await message.populate(
+          "sender",
+          "username"
+        );
+
+        io.to(normalizedRoomId).emit("receive_message", {
+         _id: populatedMessage._id,
+         roomId: normalizedRoomId,
+          type: populatedMessage.type,
+          content: populatedMessage.content,
+           fileName: populatedMessage.fileName,
+           fileSize: populatedMessage.fileSize,
+          poll: populatedMessage.poll,
+           sender: populatedMessage.sender,
+          createdAt: populatedMessage.createdAt,
+       });
+      } catch (error) {
+        console.error("Send message error:", error);
+        socket.emit("socket_error", "message");
+      }
+    });
+
+    // VOTE IN POLL
+    socket.on("vote_poll", async (payload = {}) => {
+      try {
+        const { messageId, optionIndex } = payload;
+
+        if (
+          !messageId ||
+          !Number.isInteger(optionIndex) ||
+          optionIndex < 0
+        ) {
+          return;
+        }
+
+        const message = await Message.findById(messageId);
+
+        if (!message || message.type !== "poll") return;
+
+        const roomId = message.roomId.toString();
+
+        // User must be a member of the room containing this poll
+        if (
+          !socket.rooms.has(roomId) ||
+          !roomUsers[roomId]?.has(socket.id)
+        ) {
+          return;
+        }
+
+        const options = message.poll?.options;
+
+        if (
+          !Array.isArray(options) ||
+          optionIndex >= options.length
+        ) {
+          return;
+        }
+
+        const userId = socket.user._id.toString();
+
+        // Allow only one vote per user per poll
+        const alreadyVoted = options.some((option) =>
+          option.votes.some(
+            (vote) => vote.toString() === userId
+          )
+        );
+
+        if (alreadyVoted) return;
+
+        options[optionIndex].votes.push(socket.user._id);
+
+        await message.save();
+
+        io.to(roomId).emit("poll_updated", {
+          messageId: message._id.toString(),
+          poll: message.poll,
+        });
+      } catch (error) {
+        console.error("Poll vote error:", error);
+      }
+    });
+
+    // DISCONNECT
+    socket.on("disconnect", (reason) => {
+      removeSocketFromRooms(socket);
+
+      // Clear this socket's rate-limit entries
+      for (const key of Object.keys(socketRateMap)) {
+        if (key.startsWith(`${socket.id}:`)) {
+          delete socketRateMap[key];
+        }
+      }
+
+      console.log(
+        "User disconnected:",
+        socket.user.username,
+        reason
+      );
+    });
+  });
 
   return io;
-
-}
-
+};
 
 export { io };
-export default initSocket
+export default initSocket;

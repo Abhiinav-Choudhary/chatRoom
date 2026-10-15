@@ -33,10 +33,15 @@ function ChatRoom() {
     const fetchRoom = async () => {
       try {
         const res = await fetch(
-          `https://chatroom-lgj7.onrender.com/api/chatroom/${roomId}`,
-          { credentials: "include" }
-        );
-        const data = await res.json();
+      `${import.meta.env.VITE_API_URL}/api/chatroom/${roomId}`,
+       { credentials: "include" }
+      );
+
+         if (!res.ok) {
+        throw new Error(`Failed to fetch room: ${res.status}`);
+          }
+
+       const data = await res.json();
         setRoom(data);
       } catch (err) {
         console.error("Failed to fetch room");
@@ -52,55 +57,62 @@ function ChatRoom() {
   }, [messages]);
 
   // ✅ FIXED: Join room ONLY after socket connects
-  useEffect(() => {
-    if (!roomId) return;
 
-    const joinRoom = () => {
-      console.log("Joining room:", roomId);
-      socket.emit("join_room", { roomId });
-    };
+useEffect(() => {
+  if (!roomId) return;
 
-    if (socket.connected) {
-      joinRoom();
-    } else {
-      socket.on("connect", joinRoom);
-    }
+  const joinRoom = () => {
+    socket.emit("join_room", { roomId });
+  };
 
-    const handleRoomUsers = (users) => setUsers(users);
-    const handlePreviousMessages = (msgs) => setMessages(msgs);
-    const handleReceiveMessage = (msg) =>
-      setMessages((prev) => [...prev, msg]);
+  const handleRoomUsers = (users) => setUsers(users);
+  const handlePreviousMessages = (msgs) => setMessages(msgs);
+  const handleReceiveMessage = (msg) => {
+    setMessages((prev) =>
+      prev.some((item) => item._id === msg._id)
+        ? prev
+        : [...prev, msg]
+    );
+  };
 
-    const handleRoomClosed = ({ message }) => {
-      alert(message);
-      navigate("/profile");
-    };
+  const handleRoomClosed = ({ message }) => {
+    alert(message);
+    navigate("/profile");
+  };
 
-    const handlePollUpdated = ({ messageId, poll }) => {
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg._id === messageId ? { ...msg, poll } : msg
-        )
-      );
-    };
+  const handlePollUpdated = ({ messageId, poll }) => {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg._id === messageId ? { ...msg, poll } : msg
+      )
+    );
+  };
 
-    socket.on("room_users", handleRoomUsers);
-    socket.on("previous_messages", handlePreviousMessages);
-    socket.on("receive_message", handleReceiveMessage);
-    socket.on("room_closed", handleRoomClosed);
-    socket.on("poll_updated", handlePollUpdated);
+  socket.on("connect", joinRoom);
+  socket.on("room_users", handleRoomUsers);
+  socket.on("previous_messages", handlePreviousMessages);
+  socket.on("receive_message", handleReceiveMessage);
+  socket.on("room_closed", handleRoomClosed);
+  socket.on("poll_updated", handlePollUpdated);
 
-    return () => {
-      socket.emit("leave_room", { roomId });
+  if (!socket.connected) {
+    socket.connect();
+  } else {
+    joinRoom();
+  }
 
-      socket.off("connect", joinRoom);
-      socket.off("room_users", handleRoomUsers);
-      socket.off("previous_messages", handlePreviousMessages);
-      socket.off("receive_message", handleReceiveMessage);
-      socket.off("room_closed", handleRoomClosed);
-      socket.off("poll_updated", handlePollUpdated);
-    };
-  }, [roomId, navigate]);
+  return () => {
+    socket.emit("leave_room", { roomId });
+
+    socket.off("connect", joinRoom);
+    socket.off("room_users", handleRoomUsers);
+    socket.off("previous_messages", handlePreviousMessages);
+    socket.off("receive_message", handleReceiveMessage);
+    socket.off("room_closed", handleRoomClosed);
+    socket.off("poll_updated", handlePollUpdated);
+  };
+}, [roomId, navigate]);
+
 
   // ✅ Send message
   const sendMessage = () => {
@@ -140,7 +152,7 @@ function ChatRoom() {
 
     try {
       const res = await fetch(
-        "https://chatroom-lgj7.onrender.com/api/upload/image",
+        `${import.meta.env.VITE_API_URL}/api/upload/image`,
         {
           method: "POST",
           credentials: "include",
@@ -231,7 +243,11 @@ function ChatRoom() {
                 </div>
               )}
               {msg.type === "poll" && (() => {
-                const hasVoted = msg.poll.options.some(opt => opt.votes.includes(user._id));
+               const userId = user?._id?.toString();
+
+              const hasVoted = msg.poll.options.some((opt) =>
+              opt.votes.some((vote) => vote.toString() === userId)
+               );
                 return (
                   <div className="poll-box">
                     <strong className="poll-question">{msg.poll.question}</strong>
