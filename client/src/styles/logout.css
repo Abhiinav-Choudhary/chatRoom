@@ -1,22 +1,67 @@
 .logout-btn {
-  padding: 8px 18px;
-  border: 1.5px solid #ef4444;
-  background-color: white;
-  color: #ef4444;
-  border-radius: 6px;
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 11px 17px;
+
+  border: 1px solid #e1e6f2;
+  border-radius: 12px;
+
+  color: #56617d;
+  background: rgba(255, 255, 255, 0.92);
+
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
   font-weight: 600;
+
   cursor: pointer;
-  transition: all 0.2s ease;
+  white-space: nowrap;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
-.logout-btn:hover {
-  background-color: #fef2f2;
-  color: #dc2626;
-  border-color: #dc2626;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+.logout-btn:hover:not(:disabled) {
+  color: #d84458;
+  background: #fff3f4;
+  border-color: #ffcbd2;
+  box-shadow: 0 5px 15px rgba(216, 68, 88, 0.08);
+  transform: translateY(-1px);
 }
 
-.logout-btn:active {
-  transform: scale(0.98);
+.logout-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.logout-btn:focus-visible {
+  outline: 3px solid #6558e880;
+  outline-offset: 3px;
+}
+
+.logout-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.logout-spinner {
+  animation: logout-spin 0.8s linear infinite;
+}
+
+@keyframes logout-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logout-btn,
+  .logout-spinner {
+    animation: none;
+    transition: none;
+  }
 }
