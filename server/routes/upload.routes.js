@@ -10,7 +10,7 @@ router.post(
   upload.single("image"),
   (req, res) => {
     res.json({
-      url: `http://localhost:5000/uploads/${req.file.filename}`
+      url: `https://chatroom-lgj7.onrender.com/uploads/${req.file.filename}`
     });
   }
 );
