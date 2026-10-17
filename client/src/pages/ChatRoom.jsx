@@ -569,7 +569,7 @@ function ChatRoom() {
                   sendMessage();
                 }
               }}
-              onFocus={() => setShowEmojiPicker(false)}
+              // onFocus={() => setShowEmojiPicker(false)}
               placeholder="Write a message..."
               className="message-input"
               aria-label="Write a message"

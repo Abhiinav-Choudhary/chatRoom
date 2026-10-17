@@ -22,53 +22,127 @@ function JoinRoomModal({ onClose, onJoin }) {
   const [fetching, setFetching] = useState(false);
   const [joiningRoomId, setJoiningRoomId] = useState(null);
 
-  const fetchNearbyRooms = () => {
-    setError("");
-    setRooms([]);
-    setLocationStatus("loading");
+  // const fetchNearbyRooms = () => {
+  //   setError("");
+  //   setRooms([]);
+  //   setLocationStatus("loading");
 
-    if (!navigator.geolocation) {
-      setLocationStatus("error");
-      setError("Geolocation is not supported by your browser.");
-      return;
-    }
+  //   if (!navigator.geolocation) {
+  //     setLocationStatus("error");
+  //     setError("Geolocation is not supported by your browser.");
+  //     return;
+  //   }
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
+  //   navigator.geolocation.getCurrentPosition(
+  //     async (pos) => {
+  //       setLocationStatus("success");
+  //       setFetching(true);
+
+  //       try {
+  //         const result = await getNearRooms({
+  //           latitude: pos.coords.latitude,
+  //           longitude: pos.coords.longitude,
+  //         });
+
+  //         setRooms(Array.isArray(result) ? result : []);
+  //       } catch (err) {
+  //         setError(err?.message || "Failed to fetch nearby rooms.");
+  //       } finally {
+  //         setFetching(false);
+  //       }
+  //     },
+  //     (err) => {
+  //       setLocationStatus("error");
+
+  //       if (err.code === err.PERMISSION_DENIED) {
+  //         setError("Location permission denied. Allow location access to discover nearby rooms.");
+  //       } else if (err.code === err.TIMEOUT) {
+  //         setError("Getting your location took too long. Please try again.");
+  //       } else {
+  //         setError("Unable to get your location. Check your browser settings.");
+  //       }
+  //     },
+  //     {
+  //       enableHighAccuracy: true,
+  //       timeout: 10000,
+  //       maximumAge: 60000,
+  //     }
+  //   );
+  // };
+
+  
+const fetchNearbyRooms = () => {
+  setError("");
+  setRooms([]);
+  setLocationStatus("loading");
+  setFetching(false);
+
+  if (!navigator.geolocation) {
+    setLocationStatus("error");
+    setError("Geolocation is not supported by this browser.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      setFetching(true);
+
+      try {
+        const { latitude, longitude, accuracy } = pos.coords;
+
+        console.log("Location detected:", {
+          latitude,
+          longitude,
+          accuracy,
+        });
+
+        const result = await getNearRooms({
+          latitude,
+          longitude,
+        });
+
+        setRooms(Array.isArray(result) ? result : []);
         setLocationStatus("success");
-        setFetching(true);
-
-        try {
-          const result = await getNearRooms({
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-          });
-
-          setRooms(Array.isArray(result) ? result : []);
-        } catch (err) {
-          setError(err?.message || "Failed to fetch nearby rooms.");
-        } finally {
-          setFetching(false);
-        }
-      },
-      (err) => {
+      } catch (err) {
         setLocationStatus("error");
-
-        if (err.code === err.PERMISSION_DENIED) {
-          setError("Location permission denied. Allow location access to discover nearby rooms.");
-        } else if (err.code === err.TIMEOUT) {
-          setError("Getting your location took too long. Please try again.");
-        } else {
-          setError("Unable to get your location. Check your browser settings.");
-        }
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000,
+        setError(err?.message || "Failed to fetch nearby rooms.");
+      } finally {
+        setFetching(false);
       }
-    );
-  };
+    },
+    (err) => {
+      setLocationStatus("error");
+      setFetching(false);
+
+      console.error("Geolocation error:", {
+        code: err.code,
+        message: err.message,
+      });
+
+      if (err.code === 1) {
+        setError(
+          "Location access denied. Allow location access in your browser and device settings."
+        );
+      } else if (err.code === 2) {
+        setError(
+          "Your device could not determine its location. Enable device location services and try again."
+        );
+      } else if (err.code === 3) {
+        setError(
+          "Location request timed out. Check your internet connection and try again."
+        );
+      } else {
+        setError("Unable to get your location. Please try again.");
+      }
+    },
+    {
+      enableHighAccuracy: false,
+      timeout: 20000,
+      maximumAge: 60000,
+    }
+  );
+};
+
 
   useEffect(() => {
     fetchNearbyRooms();
