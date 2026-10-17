@@ -12,6 +12,8 @@ import {
   MessageCircle,
   Users,
   LoaderCircle,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 import socket from "../socket/socket";
@@ -37,10 +39,27 @@ function ChatRoom() {
   const [roomLoading, setRoomLoading] = useState(true);
   const [roomError, setRoomError] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    try {
+      return window.localStorage.getItem("chathub-chat-theme") === "light"
+        ? "light"
+        : "dark";
+    } catch {
+      return "dark";
+    }
+  });
 
   const imageInputRef = useRef(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("chathub-chat-theme", theme);
+    } catch {
+      // The theme still works for this session if storage is unavailable.
+    }
+  }, [theme]);
 
   const userId = user?._id?.toString();
   const ownerId = (
@@ -286,7 +305,7 @@ function ChatRoom() {
   }
 
   return (
-    <main className="chatroom-container">
+    <main className="chatroom-container" data-theme={theme}>
       {/* Members sidebar stays visible on desktop and becomes a drawer on smaller screens. */}
       <Sidebar users={users} ownerId={ownerId} />
 
@@ -315,6 +334,15 @@ function ChatRoom() {
           </div>
 
           <div className="header-actions">
+            <button
+              type="button"
+              className="theme-toggle-btn"
+              onClick={() => setTheme((current) => current === "dark" ? "light" : "dark")}
+              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+              title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+            >
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
             <div className="member-count">
               <Users size={16} />
               <span>{users.length}</span>

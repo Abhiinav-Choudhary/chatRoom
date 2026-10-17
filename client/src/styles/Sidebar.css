@@ -504,3 +504,54 @@
     transition: none;
   }
 }
+
+
+/* Add this to the END of Sidebar.css. These overrides follow the theme selected on .chatroom-container. */
+.chatroom-container[data-theme="light"] .members-sidebar {
+  color: #334155;
+  background: #ffffff;
+  border-right-color: #e2e8f0;
+}
+.chatroom-container[data-theme="light"] .members-sidebar-header,
+.chatroom-container[data-theme="light"] .members-sidebar-footer {
+  border-color: #e2e8f0;
+}
+.chatroom-container[data-theme="light"] .members-brand h2,
+.chatroom-container[data-theme="light"] .members-online-summary strong,
+.chatroom-container[data-theme="light"] .member-name,
+.chatroom-container[data-theme="light"] .members-empty strong {
+  color: #1e293b;
+}
+.chatroom-container[data-theme="light"] .members-brand p,
+.chatroom-container[data-theme="light"] .members-online-summary p,
+.chatroom-container[data-theme="light"] .members-section-heading,
+.chatroom-container[data-theme="light"] .member-presence,
+.chatroom-container[data-theme="light"] .members-sidebar-footer,
+.chatroom-container[data-theme="light"] .members-empty {
+  color: #64748b;
+}
+.chatroom-container[data-theme="light"] .members-online-summary {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+}
+.chatroom-container[data-theme="light"] .member-row:hover {
+  border-color: #e0e7ff;
+  background: #f8fafc;
+}
+.chatroom-container[data-theme="light"] .member-row-owner {
+  border-color: rgba(202, 138, 4, 0.22);
+  background: #fffbeb;
+}
+.chatroom-container[data-theme="light"] .member-status-dot {
+  border-color: #ffffff;
+}
+.chatroom-container[data-theme="light"] .members-menu-btn,
+.chatroom-container[data-theme="light"] .members-close-btn {
+  color: #334155;
+  border-color: #e2e8f0;
+  background: #ffffff;
+}
+.chatroom-container[data-theme="light"] .members-menu-btn:hover,
+.chatroom-container[data-theme="light"] .members-close-btn:hover {
+  background: #eef2ff;
+}
