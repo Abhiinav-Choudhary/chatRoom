@@ -1,4 +1,4 @@
-
+import mongoose from "mongoose";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import cookie from "cookie";
@@ -129,69 +129,94 @@ const initSocket = (httpServer) => {
     console.log("User connected:", socket.user.username);
 
     // JOIN ROOM
-    socket.on("join_room", async (payload = {}) => {
-      if (isRateLimited(socket, "join_room", 3, 10000)) {
-        socket.emit("error", "Too many join attempts");
-        return;
-      }
+   
+socket.on("join_room", async (payload = {}) => {
+  if (isRateLimited(socket, "join_room", 3, 10000)) {
+    socket.emit("error", "Too many join attempts");
+    return;
+  }
 
-      try {
-        const roomId = payload?.roomId;
+  try {
+    const roomId = payload?.roomId;
 
-        if (!roomId) {
-          socket.emit("error", "Room ID is required");
-          return;
-        }
+    if (!roomId || !mongoose.isValidObjectId(roomId)) {
+      socket.emit("error", "A valid room ID is required");
+      return;
+    }
 
-        const room = await ChatRoom.findById(roomId);
+    const room = await ChatRoom.findById(roomId);
 
-        if (!room || !room.isActive) {
-          socket.emit("error", "Room is closed or does not exist");
-          return;
-        }
+    if (!room || !room.isActive) {
+      socket.emit("error", "Room is closed or does not exist");
+      return;
+    }
 
-        const normalizedRoomId = room._id.toString();
+    const normalizedRoomId = room._id.toString();
+    const userId = socket.user._id.toString();
 
-        // Join only once to avoid duplicate processing
-        if (socket.rooms.has(normalizedRoomId)) {
-          socket.emit("joined_room", {
-            roomId: normalizedRoomId,
-          });
-          return;
-        }
+    // Already joined with this socket.
+    if (socket.rooms.has(normalizedRoomId)) {
+      socket.emit("joined_room", {
+        roomId: normalizedRoomId,
+      });
+      return;
+    }
 
-        socket.join(normalizedRoomId);
+    if (!roomUsers[normalizedRoomId]) {
+      roomUsers[normalizedRoomId] = new Map();
+    }
 
-        if (!roomUsers[normalizedRoomId]) {
-          roomUsers[normalizedRoomId] = new Map();
-        }
+    const members = roomUsers[normalizedRoomId];
 
-        roomUsers[normalizedRoomId].set(socket.id, {
-          userId: socket.user._id.toString(),
-          username: socket.user.username,
-        });
+    // Count unique users, not socket connections.
+    const uniqueUserIds = new Set(
+      [...members.values()].map((member) => member.userId)
+    );
 
-        // Load the latest 50 messages, displayed oldest to newest
-        const messages = await Message.find({
-          roomId: normalizedRoomId,
-        })
-          .sort({ createdAt: -1 })
-          .limit(50)
-          .populate("sender", "username")
-          .then((items) => items.reverse());
+    const isAlreadyMember = uniqueUserIds.has(userId);
+    const maxMembers = room.maxMembers;
 
-        socket.emit("previous_messages", messages);
+    if (
+      !isAlreadyMember &&
+      maxMembers != null &&
+      uniqueUserIds.size >= maxMembers
+    ) {
+      socket.emit("room_full", {
+        roomId: normalizedRoomId,
+        message: "This room is full. You cannot join right now.",
+        maxMembers,
+      });
+      return;
+    }
 
-        broadcastRoomUsers(normalizedRoomId);
+    socket.join(normalizedRoomId);
 
-        socket.emit("joined_room", {
-          roomId: normalizedRoomId,
-        });
-      } catch (error) {
-        console.error("Join room error:", error);
-        socket.emit("error", "Failed to join room");
-      }
+    members.set(socket.id, {
+      userId,
+      username: socket.user.username,
     });
+
+    // Load the latest 50 messages, oldest to newest.
+    const messages = await Message.find({
+      roomId: normalizedRoomId,
+    })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .populate("sender", "username")
+      .then((items) => items.reverse());
+
+    socket.emit("previous_messages", messages);
+
+    broadcastRoomUsers(normalizedRoomId);
+
+    socket.emit("joined_room", {
+      roomId: normalizedRoomId,
+    });
+  } catch (error) {
+    console.error("Join room error:", error);
+    socket.emit("error", "Failed to join room");
+  }
+});
 
     // LEAVE ROOM
     socket.on("leave_room", async (payload = {}) => {

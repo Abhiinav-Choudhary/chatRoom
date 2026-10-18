@@ -20,6 +20,8 @@ function CreateRoomModal({ onClose, onRoomCreated }) {
   const [error, setError] = useState("");
   const [locationStatus, setLocationStatus] = useState("loading");
   const [submitting, setSubmitting] = useState(false);
+  const [limitEnabled, setLimitEnabled] = useState(false);
+const [maxMembers, setMaxMembers] = useState("10");
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -73,6 +75,15 @@ function CreateRoomModal({ onClose, onRoomCreated }) {
       return;
     }
 
+    if (limitEnabled) {
+  const limit = Number(maxMembers);
+
+  if (!Number.isInteger(limit) || limit < 2 || limit > 1000) {
+    setError("Member limit must be between 2 and 1000.");
+    return;
+  }
+}
+
     if (!location) {
       setError("Your location is not available yet. Please allow location access.");
       return;
@@ -83,12 +94,13 @@ function CreateRoomModal({ onClose, onRoomCreated }) {
     setSubmitting(true);
 
     try {
-      const room = await createRoom({
-        name: trimmedName,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        radius: radiusValue,
-      });
+     const room = await createRoom({
+  name: trimmedName,
+  latitude: location.latitude,
+  longitude: location.longitude,
+  radius: radiusValue,
+  maxMembers: limitEnabled ? Number(maxMembers) : null,
+});
 
       if (!room?._id) {
         throw new Error("Room creation did not return a room ID.");
@@ -190,6 +202,48 @@ function CreateRoomModal({ onClose, onRoomCreated }) {
             />
             <span className="create-room-radius-suffix">meters</span>
           </div>
+
+          
+<div className="create-room-limit">
+  <label className="create-room-limit-toggle">
+    <input
+      type="checkbox"
+      checked={limitEnabled}
+      onChange={(e) => setLimitEnabled(e.target.checked)}
+      disabled={isSubmitting}
+    />
+
+    <span className="create-room-limit-copy">
+      <strong>Set member limit</strong>
+      <small>
+        {limitEnabled
+          ? "The room will stop accepting new members when full."
+          : "Anyone can join until you choose to set a limit."}
+      </small>
+    </span>
+  </label>
+
+  {limitEnabled && (
+    <div className="create-room-limit-input">
+      <label htmlFor="room-max-members">
+        Maximum members <span>(including you)</span>
+      </label>
+
+      <input
+        id="room-max-members"
+        type="number"
+        min="2"
+        max="1000"
+        step="1"
+        value={maxMembers}
+        onChange={(e) => setMaxMembers(e.target.value)}
+        disabled={isSubmitting}
+        required
+      />
+    </div>
+  )}
+</div>
+
 
           <p className="create-room-hint">
             Choose how far away people can be to discover your room.

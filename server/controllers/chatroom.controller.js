@@ -2,37 +2,75 @@ import ChatRoom from "../models/ChatRoom.js";
 import Message from "../models/message.model.js"; // if messages stored in DB
 import  {io}  from "../socket/socket.js";
 
+
 export const createRoom = async (req, res) => {
   try {
-    const { name, latitude, longitude, radius } = req.body;
+    const { name, latitude, longitude, radius, maxMembers } = req.body;
 
-    // 1. Basic validation
     if (
-  !name ||
-  latitude === undefined ||
-  longitude === undefined ||
-  radius === undefined
-) {
-  return res.status(400).json({ message: "All fields are required" });
-}
+      !name?.trim() ||
+      latitude === undefined ||
+      longitude === undefined ||
+      radius === undefined
+    ) {
+      return res.status(400).json({
+        message: "Name, location, and radius are required.",
+      });
+    }
 
-    // 2. Create chatroom
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+    const radiusValue = Number(radius);
+
+    if (
+      !Number.isFinite(lat) ||
+      lat < -90 ||
+      lat > 90 ||
+      !Number.isFinite(lng) ||
+      lng < -180 ||
+      lng > 180 ||
+      !Number.isFinite(radiusValue) ||
+      radiusValue <= 0
+    ) {
+      return res.status(400).json({
+        message: "Invalid location or radius.",
+      });
+    }
+
+    let memberLimit = null;
+
+    // null/undefined means unlimited.
+    if (maxMembers !== undefined && maxMembers !== null && maxMembers !== "") {
+      memberLimit = Number(maxMembers);
+
+      if (!Number.isInteger(memberLimit) || memberLimit < 1) {
+        return res.status(400).json({
+          message: "Member limit must be a positive whole number.",
+        });
+      }
+    }
+
     const room = await ChatRoom.create({
-      name,
+      name: name.trim(),
       createdBy: req.user._id,
       location: {
         type: "Point",
-        coordinates: [longitude, latitude]
+        coordinates: [lng, lat],
       },
-      radius
+      radius: radiusValue,
+      maxMembers: memberLimit,
     });
 
-    // 3. Respond
-    res.status(201).json(room);
+    return res.status(201).json(room);
   } catch (error) {
-    res.status(500).json({ message: "Failed to create room" });
+    console.error("Create room error:", error);
+
+    return res.status(500).json({
+      message: "Failed to create room.",
+    });
   }
 };
+
 
 export const closeRoom = async (req, res) => {
   try {
