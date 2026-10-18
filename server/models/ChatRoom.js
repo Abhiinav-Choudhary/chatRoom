@@ -55,12 +55,28 @@ const chatRoomSchema = new mongoose.Schema(
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },
+
 ],
+expiresAt: {
+  type: Date,
+  default: null,
+},
   },
   { timestamps: true }
 );
 
+chatRoomSchema.index(
+  { location: "2dsphere" },
+  { expiresAt: 1 },
+  {
+    expireAfterSeconds: 0,
+    partialFilterExpression: {
+      expiresAt: { $type: "date" },
+    },
+  }
+);
+
 // Geo index
-chatRoomSchema.index({ location: "2dsphere" });
+// chatRoomSchema.index();
 
 export default mongoose.model("ChatRoom", chatRoomSchema);

@@ -22,6 +22,7 @@ function CreateRoomModal({ onClose, onRoomCreated }) {
   const [submitting, setSubmitting] = useState(false);
   const [limitEnabled, setLimitEnabled] = useState(false);
 const [maxMembers, setMaxMembers] = useState("10");
+const [durationMinutes, setDurationMinutes] = useState("");
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -100,6 +101,7 @@ const [maxMembers, setMaxMembers] = useState("10");
   longitude: location.longitude,
   radius: radiusValue,
   maxMembers: limitEnabled ? Number(maxMembers) : null,
+   durationMinutes: durationMinutes || null,
 });
 
       if (!room?._id) {
@@ -244,6 +246,29 @@ const [maxMembers, setMaxMembers] = useState("10");
   )}
 </div>
 
+
+<label htmlFor="room-duration" className="room-duration-label">
+  Room duration <span>(optional)</span>
+</label>
+
+<select
+  id="room-duration"
+  className="room-duration-select"
+  value={durationMinutes}
+  onChange={(e) => setDurationMinutes(e.target.value)}
+>
+  <option value="">No automatic expiry</option>
+  <option value="15">15 minutes</option>
+  <option value="30">30 minutes</option>
+  <option value="60">1 hour</option>
+  <option value="180">3 hours</option>
+  <option value="360">6 hours</option>
+  <option value="1440">24 hours</option>
+</select>
+
+<small className="room-duration-hint">
+  The room will close automatically when its duration expires.
+</small>
 
           <p className="create-room-hint">
             Choose how far away people can be to discover your room.

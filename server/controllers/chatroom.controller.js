@@ -5,7 +5,21 @@ import { io, getRoomMemberCount } from "../socket/socket.js";
 
 export const createRoom = async (req, res) => {
   try {
-    const { name, latitude, longitude, radius, maxMembers } = req.body;
+   const { name, latitude, longitude, radius, durationMinutes } = req.body;
+
+let expiresAt = null;
+
+if (durationMinutes !== undefined && durationMinutes !== null && durationMinutes !== "") {
+  const duration = Number(durationMinutes);
+
+  if (!Number.isInteger(duration) || duration < 1 || duration > 1440) {
+    return res.status(400).json({
+      message: "Duration must be between 1 and 1440 minutes.",
+    });
+  }
+
+  expiresAt = new Date(Date.now() + duration * 60 * 1000);
+}
 
     if (
       !name?.trim() ||
@@ -59,6 +73,7 @@ export const createRoom = async (req, res) => {
       },
       radius: radiusValue,
       maxMembers: memberLimit,
+      expiresAt
     });
 
     return res.status(201).json(room);
