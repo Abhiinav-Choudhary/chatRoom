@@ -26,13 +26,28 @@ const messageSchema = new mongoose.Schema({
   fileSize: Number,
 
   poll: {
-    question: String,
-    options: [
-      {
-        option: String,
-        votes: [mongoose.Schema.Types.ObjectId]
-      }
-    ]
+    
+  question: {
+    type: String,
+    required: function () {
+      return this.type === "poll";
+    },
+    trim: true
+  },
+  options: [
+    {
+      option: {
+        type: String,
+        required: true,
+        trim: true
+      },
+      votes: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+      }]
+    }
+  ]
+
   }
 
 }, { timestamps: true });

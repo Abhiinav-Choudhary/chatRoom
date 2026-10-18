@@ -338,64 +338,61 @@ const initSocket = (httpServer) => {
     });
 
     // VOTE IN POLL
-    socket.on("vote_poll", async (payload = {}) => {
-      try {
-        const { messageId, optionIndex } = payload;
+socket.on("vote_poll", async (payload = {}) => {
+  try {
+    const { messageId, optionIndex } = payload;
 
-        if (
-          !messageId ||
-          !Number.isInteger(optionIndex) ||
-          optionIndex < 0
-        ) {
-          return;
-        }
+    if (
+      !messageId ||
+      !Number.isInteger(optionIndex) ||
+      optionIndex < 0
+    ) {
+      return;
+    }
 
-        const message = await Message.findById(messageId);
+    const message = await Message.findById(messageId);
 
-        if (!message || message.type !== "poll") return;
+    if (!message || message.type !== "poll") return;
 
-        const roomId = message.roomId.toString();
+    const roomId = message.roomId.toString();
 
-        // User must be a member of the room containing this poll
-        if (
-          !socket.rooms.has(roomId) ||
-          !roomUsers[roomId]?.has(socket.id)
-        ) {
-          return;
-        }
+    if (
+      !socket.rooms.has(roomId) ||
+      !roomUsers[roomId]?.has(socket.id)
+    ) {
+      return;
+    }
 
-        const options = message.poll?.options;
+    const options = message.poll?.options;
 
-        if (
-          !Array.isArray(options) ||
-          optionIndex >= options.length
-        ) {
-          return;
-        }
+    if (!Array.isArray(options) || optionIndex >= options.length) {
+      return;
+    }
 
-        const userId = socket.user._id.toString();
+    const userId = socket.user._id.toString();
 
-        // Allow only one vote per user per poll
-        const alreadyVoted = options.some((option) =>
-          option.votes.some(
-            (vote) => vote.toString() === userId
-          )
-        );
+    const alreadyVoted = options.some((option) =>
+      option.votes.some((vote) => vote.toString() === userId)
+    );
 
-        if (alreadyVoted) return;
+    if (alreadyVoted) return;
 
-        options[optionIndex].votes.push(socket.user._id);
+    options[optionIndex].votes.push(socket.user._id);
 
-        await message.save();
+    await message.save();
 
-        io.to(roomId).emit("poll_updated", {
-          messageId: message._id.toString(),
-          poll: message.poll,
-        });
-      } catch (error) {
-        console.error("Poll vote error:", error);
-      }
+    // Fetch voter details for the UI.
+    const updatedMessage = await Message.findById(message._id)
+      .populate("poll.options.votes", "username");
+
+    io.to(roomId).emit("poll_updated", {
+      messageId: updatedMessage._id.toString(),
+      poll: updatedMessage.poll,
     });
+  } catch (error) {
+    console.error("Poll vote error:", error);
+  }
+});
 
     // DISCONNECT
     socket.on("disconnect", (reason) => {

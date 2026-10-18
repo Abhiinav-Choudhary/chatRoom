@@ -386,11 +386,11 @@ function ChatRoom() {
                 msg.sender?.toString() === userId;
 
               const pollOptions = msg.poll?.options || [];
-              const hasVoted = pollOptions.some((option) =>
-                (option.votes || []).some(
-                  (vote) => vote.toString() === userId
-                )
-              );
+              // const hasVoted = pollOptions.some((option) =>
+              //   (option.votes || []).some(
+              //     (vote) => vote.toString() === userId
+              //   )
+              // );
 
               return (
                 <article
@@ -449,74 +449,116 @@ function ChatRoom() {
                         </div>
                       )}
 
-                      {msg.type === "poll" && (
-                        <div className="poll-box">
-                          <div className="poll-title-row">
-                            <BarChart3 size={19} />
-                            <span>Community poll</span>
-                          </div>
+                     {msg.type === "poll" && (() => {
+  const totalVotes = pollOptions.reduce(
+    (sum, option) => sum + (option.votes?.length || 0),
+    0
+  );
 
-                          <h3 className="poll-question">
-                            {msg.poll?.question}
-                          </h3>
+ const getVoteUserId = (vote) =>
+  typeof vote === "object" && vote !== null
+    ? vote._id?.toString()
+    : vote?.toString();
 
-                          <div className="poll-options">
-                            {pollOptions.map((option, index) => {
-                              const votes = option.votes || [];
-                              const totalVotes = pollOptions.reduce(
-                                (sum, item) =>
-                                  sum + (item.votes?.length || 0),
-                                0
-                              );
-                              const percentage = totalVotes
-                                ? Math.round(
-                                    (votes.length / totalVotes) * 100
-                                  )
-                                : 0;
+const hasVoted = pollOptions.some((option) =>
+  (option.votes || []).some(
+    (vote) => getVoteUserId(vote) === userId
+  )
+);
+  const getVoteUsername = (vote) =>
+    typeof vote === "object" && vote !== null
+      ? vote.username
+      : null;
 
-                              return (
-                                <button
-                                  key={index}
-                                  className="poll-option"
-                                  disabled={hasVoted || !socket.connected}
-                                  onClick={() =>
-                                    socket.emit("vote_poll", {
-                                      messageId: msg._id,
-                                      optionIndex: index,
-                                    })
-                                  }
-                                >
-                                  <span
-                                    className="poll-progress"
-                                    style={{
-                                      width: `${percentage}%`,
-                                    }}
-                                  />
-                                  <span className="poll-option-label">
-                                    {option.option}
-                                  </span>
-                                  <span className="poll-vote-count">
-                                    {votes.length}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
+  return (
+    <div className="poll-box">
+      <div className="poll-title-row">
+        <BarChart3 size={19} />
+        <span>Community poll</span>
+      </div>
 
-                          <p className="poll-footer">
-                            {hasVoted
-                              ? "You've voted"
-                              : "Choose an option to vote"}
-                            {" · "}
-                            {pollOptions.reduce(
-                              (sum, option) =>
-                                sum + (option.votes?.length || 0),
-                              0
-                            )}{" "}
-                            votes
-                          </p>
-                        </div>
-                      )}
+      <h3 className="poll-question">
+        {msg.poll?.question}
+      </h3>
+
+      <div className="poll-options">
+        {pollOptions.map((option, index) => {
+          const votes = option.votes || [];
+
+          const percentage = totalVotes
+            ? Math.round((votes.length / totalVotes) * 100)
+            : 0;
+
+          return (
+            <div className="poll-option-wrapper" key={index}>
+              <button
+                type="button"
+                className="poll-option"
+                disabled={hasVoted || !socket.connected}
+                onClick={() =>
+                  socket.emit("vote_poll", {
+                    messageId: msg._id,
+                    optionIndex: index,
+                  })
+                }
+              >
+                <span
+                  className="poll-progress"
+                  style={{ width: `${percentage}%` }}
+                />
+
+                <span className="poll-option-label">
+                  {option.option}
+                </span>
+
+                <span className="poll-vote-count">
+                  {votes.length}
+                </span>
+              </button>
+
+              {votes.length > 0 && (
+                <div className="poll-voters">
+                  {votes.map((vote, voterIndex) => {
+                    const voterId = getVoteUserId(vote);
+                    const username = getVoteUsername(vote);
+
+                    return (
+                      <span
+                        className="poll-voter"
+                        key={voterId || voterIndex}
+                        title={username || "Voter"}
+                      >
+                        <span className="poll-voter-avatar">
+                          {(username || "?")
+                            .charAt(0)
+                            .toUpperCase()}
+                        </span>
+
+                        <span className="poll-voter-name">
+                          {username ||
+                            (voterId === userId
+                              ? "You"
+                              : "Voter")}
+                        </span>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="poll-footer">
+        {hasVoted ? "You've voted" : "Choose an option to vote"}
+        {" · "}
+        {totalVotes} {totalVotes === 1 ? "vote" : "votes"}
+      </p>
+    </div>
+  );
+})()}
+                      
                     </div>
                   </div>
                 </article>
