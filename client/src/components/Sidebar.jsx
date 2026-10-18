@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Users,
@@ -7,10 +6,20 @@ import {
   Crown,
   MessageCircle,
   CircleUserRound,
+  UserRoundX,
+  ShieldBan,
+  RotateCcw,
 } from "lucide-react";
+import socket from "../socket/socket";
 import "../styles/Sidebar.css";
 
-function Sidebar({ users = [], ownerId }) {
+function Sidebar({
+  users = [],
+  ownerId,
+  roomId,
+  isOwner = false,
+  bannedUsers = [],
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   const uniqueUsers = useMemo(() => {
@@ -54,6 +63,24 @@ function Sidebar({ users = [], ownerId }) {
     ownerId != null &&
     userId != null &&
     String(userId) === String(ownerId);
+
+  const handleModeration = (action, targetUserId, username) => {
+    const labels = {
+      kick: `Kick ${username} from this room? They can rejoin.`,
+      block: `Block ${username} from this room? They cannot rejoin until unblocked.`,
+      unblock: `Unblock ${username}? They will be allowed to join again.`,
+    };
+
+    if (!window.confirm(labels[action])) return;
+
+    const eventName = {
+      kick: "kick_user",
+      block: "block_user",
+      unblock: "unblock_user",
+    }[action];
+
+    socket.emit(eventName, { roomId, targetUserId });
+  };
 
   return (
     <>
@@ -130,13 +157,13 @@ function Sidebar({ users = [], ownerId }) {
             </div>
           ) : (
             uniqueUsers.map((user) => {
-              const isOwner = isRoomOwner(user.userId);
+              const userIsOwner = isRoomOwner(user.userId);
 
               return (
                 <div
                   key={String(user.userId)}
                   className={`member-row ${
-                    isOwner ? "member-row-owner" : ""
+                    userIsOwner ? "member-row-owner" : ""
                   }`}
                 >
                   <div className="member-avatar">
@@ -148,23 +175,117 @@ function Sidebar({ users = [], ownerId }) {
                     <span className="member-name">
                       {user.username || "Unknown user"}
                     </span>
+
                     <span className="member-presence">
                       <span />
                       In this room
                     </span>
                   </div>
 
-                  {isOwner && (
-                    <span className="member-owner-badge" title="Room owner">
+                  {userIsOwner && (
+                    <span
+                      className="member-owner-badge"
+                      title="Room owner"
+                    >
                       <Crown size={13} />
                       Owner
                     </span>
+                  )}
+
+                  {isOwner && !userIsOwner && (
+                    <div className="member-moderation-actions">
+                      <button
+                        type="button"
+                        title="Kick member"
+                        aria-label={`Kick ${user.username}`}
+                        onClick={() =>
+                          handleModeration(
+                            "kick",
+                            String(user.userId),
+                            user.username || "this user"
+                          )
+                        }
+                      >
+                        <UserRoundX size={15} />
+                      </button>
+
+                      <button
+                        type="button"
+                        title="Block member"
+                        aria-label={`Block ${user.username}`}
+                        onClick={() =>
+                          handleModeration(
+                            "block",
+                            String(user.userId),
+                            user.username || "this user"
+                          )
+                        }
+                      >
+                        <ShieldBan size={15} />
+                      </button>
+                    </div>
                   )}
                 </div>
               );
             })
           )}
         </div>
+
+        {isOwner && (
+          <div className="blocked-members-section">
+            <div className="members-section-heading">
+              <span>BLOCKED MEMBERS</span>
+              <span className="members-count">
+                {bannedUsers.length}
+              </span>
+            </div>
+
+            {bannedUsers.length === 0 ? (
+              <p className="blocked-members-empty">
+                No blocked members.
+              </p>
+            ) : (
+              bannedUsers.map((blockedUser) => {
+                const blockedId =
+                  typeof blockedUser === "object" && blockedUser !== null
+                    ? blockedUser._id
+                    : blockedUser;
+
+                const blockedName =
+                  typeof blockedUser === "object" && blockedUser !== null
+                    ? blockedUser.username || "Unknown user"
+                    : `User ${String(blockedUser).slice(-6)}`;
+
+                return (
+                  <div
+                    className="blocked-member-row"
+                    key={String(blockedId)}
+                  >
+                    <span className="blocked-member-name">
+                      {blockedName}
+                    </span>
+
+                    <button
+                      type="button"
+                      title={`Unblock ${blockedName}`}
+                      aria-label={`Unblock ${blockedName}`}
+                      onClick={() =>
+                        handleModeration(
+                          "unblock",
+                          String(blockedId),
+                          blockedName
+                        )
+                      }
+                    >
+                      <RotateCcw size={15} />
+                      Unblock
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
 
         <div className="members-sidebar-footer">
           <span className="footer-status-dot" />

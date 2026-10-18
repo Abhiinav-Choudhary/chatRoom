@@ -555,3 +555,63 @@
 .chatroom-container[data-theme="light"] .members-close-btn:hover {
   background: #eef2ff;
 }
+
+.member-moderation-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.member-moderation-actions button,
+.blocked-member-row button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid var(--sidebar-border, #e2e8f0);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.member-moderation-actions button:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.blocked-members-section {
+  padding: 14px 16px;
+  border-top: 1px solid var(--sidebar-border, #e2e8f0);
+}
+
+.blocked-members-empty {
+  margin-top: 10px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.blocked-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 0;
+}
+
+.blocked-member-name {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+.blocked-member-row button {
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.blocked-member-row button:hover {
+  background: #dcfce7;
+  color: #166534;
+}

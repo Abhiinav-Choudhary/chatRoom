@@ -14,6 +14,12 @@ import {
   LoaderCircle,
   Sun,
   Moon,
+  Menu,
+  Crown,
+  CircleUserRound,
+  UserRoundX,
+  ShieldBan,
+  RotateCcw,
 } from "lucide-react";
 
 import socket from "../socket/socket";
@@ -247,6 +253,31 @@ useEffect(() => {
     );
   };
 
+  const handleRoomRemoved = ({ message }) => {
+  if (!active) return;
+
+  window.alert(message);
+  navigate("/profile");
+};
+
+const handleBansUpdated = (data) => {
+  if (!active || data?.roomId !== roomId) return;
+
+  setRoom((previous) =>
+    previous
+      ? { ...previous, bannedUsers: data.bannedUsers }
+      : previous
+  );
+};
+
+const handleModerationError = ({ message }) => {
+  window.alert(message || "Moderation action failed.");
+};
+
+const handleModerationSuccess = ({ message }) => {
+  window.alert(message);
+};
+
   socket.on("connect", joinRoom);
   socket.on("joined_room", handleJoinedRoom);
   socket.on("room_full", handleRoomFull);
@@ -255,6 +286,11 @@ useEffect(() => {
   socket.on("receive_message", handleReceiveMessage);
   socket.on("room_closed", handleRoomClosed);
   socket.on("poll_updated", handlePollUpdated);
+  socket.on("room_kicked", handleRoomRemoved);
+socket.on("room_blocked", handleRoomRemoved);
+socket.on("room_bans_updated", handleBansUpdated);
+socket.on("moderation_error", handleModerationError);
+socket.on("moderation_success", handleModerationSuccess);
 
   if (!socket.connected) {
     socket.connect();
@@ -273,6 +309,12 @@ useEffect(() => {
     socket.off("receive_message", handleReceiveMessage);
     socket.off("room_closed", handleRoomClosed);
     socket.off("poll_updated", handlePollUpdated);
+
+    socket.off("room_kicked", handleRoomRemoved);
+socket.off("room_blocked", handleRoomRemoved);
+socket.off("room_bans_updated", handleBansUpdated);
+socket.off("moderation_error", handleModerationError);
+socket.off("moderation_success", handleModerationSuccess);
 
     if (socket.connected) {
       socket.emit("leave_room", { roomId });
@@ -437,7 +479,13 @@ if (joinStatus !== "joined") {
   return (
     <main className="chatroom-container" data-theme={theme}>
       {/* Members sidebar stays visible on desktop and becomes a drawer on smaller screens. */}
-      <Sidebar users={users} ownerId={ownerId} />
+      <Sidebar
+    users={users}
+    ownerId={ownerId}
+    roomId={roomId}
+    isOwner={isOwner}
+    bannedUsers={room?.bannedUsers || []}
+    />
 
       <section className="chat-wrapper">
    

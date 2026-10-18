@@ -115,7 +115,8 @@ export const getChatRoomById = async (req, res) => {
   try {
     const { roomId } = req.params;
 
-    const room = await ChatRoom.findById(roomId);
+    const room = await ChatRoom.findById(roomId)
+      .populate("bannedUsers", "username");
 
     if (!room) {
       return res.status(404).json({ message: "Room not found" });

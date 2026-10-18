@@ -69,6 +69,46 @@ const broadcastRoomUsers = (roomId) => {
   io.to(roomId).emit("room_users", getRoomUsers(roomId));
 };
 
+
+const isRoomOwner = (room, userId) =>
+  room.createdBy.toString() === userId.toString();
+
+const removeUserSocketsFromRoom = async (roomId, targetUserId, event, message) => {
+  const members = roomUsers[roomId];
+  if (!members) return;
+
+  for (const [socketId, member] of [...members.entries()]) {
+    if (member.userId.toString() !== targetUserId.toString()) continue;
+
+    const targetSocket = io.sockets.sockets.get(socketId);
+
+    // Notify the target before removing them.
+    targetSocket?.emit(event, { roomId, message });
+
+    targetSocket?.leave(roomId);
+    members.delete(socketId);
+  }
+
+  if (members.size === 0) {
+    delete roomUsers[roomId];
+  } else {
+    broadcastRoomUsers(roomId);
+  }
+};
+
+const sendUpdatedBansToOwner = async (socket, roomId) => {
+  const room = await ChatRoom.findById(roomId)
+    .populate("bannedUsers", "username");
+
+  if (room) {
+    socket.emit("room_bans_updated", {
+      roomId,
+      bannedUsers: room.bannedUsers,
+    });
+  }
+};
+
+
 // Remove a socket from room presence tracking
 const removeSocketFromRooms = (socket) => {
   for (const roomId of Object.keys(roomUsers)) {
@@ -165,6 +205,19 @@ socket.on("join_room", async (payload = {}) => {
     const normalizedRoomId = room._id.toString();
     const userId = socket.user._id.toString();
 
+
+const isBlocked = room.bannedUsers.some(
+  (id) => id.toString() === userId
+);
+
+if (isBlocked) {
+  socket.emit("room_blocked", {
+    roomId: normalizedRoomId,
+    message: "You are blocked from joining this room.",
+  });
+  return;
+}
+
     // Already joined with this socket.
     if (socket.rooms.has(normalizedRoomId)) {
       socket.emit("joined_room", {
@@ -200,6 +253,8 @@ socket.on("join_room", async (payload = {}) => {
       return;
     }
 
+
+    
     socket.join(normalizedRoomId);
 
     members.set(socket.id, {
@@ -256,6 +311,135 @@ socket.on("join_room", async (payload = {}) => {
         console.error("Leave room error:", error);
       }
     });
+
+    
+const moderateRoom = async (socket, payload, action) => {
+  try {
+    const { roomId, targetUserId } = payload || {};
+
+    if (
+      !roomId ||
+      !targetUserId ||
+      !mongoose.isValidObjectId(roomId) ||
+      !mongoose.isValidObjectId(targetUserId)
+    ) {
+      socket.emit("moderation_error", {
+        message: "Invalid room or user.",
+      });
+      return;
+    }
+
+    const room = await ChatRoom.findById(roomId);
+
+    if (!room || !room.isActive) {
+      socket.emit("moderation_error", {
+        message: "Room not found or closed.",
+      });
+      return;
+    }
+
+    if (!isRoomOwner(room, socket.user._id)) {
+      socket.emit("moderation_error", {
+        message: "Only the room owner can moderate members.",
+      });
+      return;
+    }
+
+    if (targetUserId === socket.user._id.toString()) {
+      socket.emit("moderation_error", {
+        message: "You cannot moderate yourself.",
+      });
+      return;
+    }
+
+    const roomKey = room._id.toString();
+
+    const targetIsMember = [...(roomUsers[roomKey]?.values() || [])]
+      .some((member) => member.userId.toString() === targetUserId);
+
+    if (action !== "unblock" && !targetIsMember) {
+      socket.emit("moderation_error", {
+        message: "That user is not currently in this room.",
+      });
+      return;
+    }
+
+    if (action === "kick") {
+      await removeUserSocketsFromRoom(
+        roomKey,
+        targetUserId,
+        "room_kicked",
+        "The room owner removed you from this room."
+      );
+    }
+
+    if (action === "block") {
+      if (room.bannedUsers.some((id) => id.toString() === targetUserId)) {
+        socket.emit("moderation_error", {
+          message: "This user is already blocked.",
+        });
+        return;
+      }
+
+      room.bannedUsers.addToSet(targetUserId);
+      await room.save();
+
+      await removeUserSocketsFromRoom(
+        roomKey,
+        targetUserId,
+        "room_blocked",
+        "The room owner blocked you from this room."
+      );
+    }
+
+    if (action === "unblock") {
+      const wasBlocked = room.bannedUsers.some(
+        (id) => id.toString() === targetUserId
+      );
+
+      if (!wasBlocked) {
+        socket.emit("moderation_error", {
+          message: "This user is not blocked.",
+        });
+        return;
+      }
+
+      room.bannedUsers.pull(targetUserId);
+      await room.save();
+    }
+
+    await sendUpdatedBansToOwner(socket, roomKey);
+
+    socket.emit("moderation_success", {
+      roomId: roomKey,
+      action,
+      message:
+        action === "kick"
+          ? "Member kicked from the room."
+          : action === "block"
+            ? "Member blocked from the room."
+            : "Member unblocked successfully.",
+    });
+  } catch (error) {
+    console.error(`Room moderation (${action}) error:`, error);
+    socket.emit("moderation_error", {
+      message: "Failed to complete the moderation action.",
+    });
+  }
+};
+
+socket.on("kick_user", (payload = {}) =>
+  moderateRoom(socket, payload, "kick")
+);
+
+socket.on("block_user", (payload = {}) =>
+  moderateRoom(socket, payload, "block")
+);
+
+socket.on("unblock_user", (payload = {}) =>
+  moderateRoom(socket, payload, "unblock")
+);
+
 
     // SEND MESSAGE
     socket.on("send_message", async (payload = {}) => {
@@ -335,6 +519,17 @@ socket.on("join_room", async (payload = {}) => {
         }
 
         const room = await ChatRoom.findById(normalizedRoomId);
+
+        if (
+  !room ||
+  !room.isActive ||
+  room.bannedUsers.some(
+    (id) => id.toString() === socket.user._id.toString()
+  )
+) {
+  socket.emit("socket_error", "message");
+  return;
+}
 
         if (!room || !room.isActive) {
           socket.emit("socket_error", "message");

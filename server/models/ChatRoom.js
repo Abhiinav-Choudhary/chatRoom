@@ -50,6 +50,12 @@ const chatRoomSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    bannedUsers: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+],
   },
   { timestamps: true }
 );
