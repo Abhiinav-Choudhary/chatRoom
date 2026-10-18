@@ -20,6 +20,7 @@ import {
   UserRoundX,
   ShieldBan,
   RotateCcw,
+  Film
 } from "lucide-react";
 
 import socket from "../socket/socket";
@@ -28,7 +29,11 @@ import { useAuth } from "../contexts/AuthContext";
 import { closeChatRoom } from "../api/chat.api";
 import EmojiPicker from "emoji-picker-react";
 import CreatePollModal from "../components/CreatePollModal";
+
+import GIFPicker from "../components/GIFPicker";
 import "../styles/ChatRoom.css";
+
+
 
 function ChatRoom() {
   const navigate = useNavigate();
@@ -45,6 +50,7 @@ function ChatRoom() {
   const [roomLoading, setRoomLoading] = useState(true);
   const [roomError, setRoomError] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [showGIFPicker, setShowGIFPicker] = useState(false);
   const [theme, setTheme] = useState(() => {
     try {
       return window.localStorage.getItem("chathub-chat-theme") === "light"
@@ -423,6 +429,21 @@ socket.off("moderation_success", handleModerationSuccess);
     }
   };
 
+  const handleSendGIF = (gifUrl) => {
+  if (!socket.connected) {
+    window.alert("Connection unavailable. Please try again.");
+    return;
+  }
+
+  socket.emit("send_message", {
+    roomId,
+    type: "image",
+    content: gifUrl,
+  });
+
+  setShowGIFPicker(false);
+};
+
   const formatTime = (date) => {
     if (!date) return "";
 
@@ -758,6 +779,13 @@ const hasVoted = pollOptions.some((option) =>
             </div>
           )}
 
+          {showGIFPicker && (
+         <GIFPicker
+         onSelect={handleSendGIF}
+         onClose={() => setShowGIFPicker(false)}
+         />
+          )}
+
           <div className="composer-toolbar">
             <button
               className={`composer-icon ${
@@ -800,6 +828,19 @@ const hasVoted = pollOptions.some((option) =>
             >
               <BarChart3 size={21} />
             </button>
+
+            <button
+  type="button"
+  className={`composer-icon ${showGIFPicker ? "active" : ""}`}
+  onClick={() => {
+    setShowGIFPicker((prev) => !prev);
+    setShowEmojiPicker(false);
+  }}
+  aria-label="Choose a GIF"
+  title="Choose a GIF"
+>
+  <Film size={21} />
+</button>
 
             <span className="composer-hint">
               Be kind. Keep the conversation going.

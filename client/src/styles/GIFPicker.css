@@ -1,0 +1,233 @@
+
+/* GIF Picker — Dark mode by default */
+.gif-picker {
+  --gif-bg: #111827;
+  --gif-surface: #1e293b;
+  --gif-border: #334155;
+  --gif-text: #f8fafc;
+  --gif-muted: #94a3b8;
+  --gif-accent: #818cf8;
+  --gif-hover: #293548;
+
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  z-index: 50;
+
+  display: flex;
+  flex-direction: column;
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(460px, 65dvh);
+  overflow: hidden;
+
+  border: 1px solid var(--gif-border);
+  border-radius: 16px;
+  background: var(--gif-bg);
+  color: var(--gif-text);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 30%);
+}
+
+/* Light mode */
+.chatroom-container[data-theme="light"] .gif-picker {
+  --gif-bg: #ffffff;
+  --gif-surface: #f8fafc;
+  --gif-border: #e2e8f0;
+  --gif-text: #0f172a;
+  --gif-muted: #64748b;
+  --gif-accent: #4f46e5;
+  --gif-hover: #eef2ff;
+
+  box-shadow: 0 16px 40px rgb(15 23 42 / 14%);
+}
+
+/* Header */
+.gif-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border-bottom: 1px solid var(--gif-border);
+}
+
+.gif-picker-header h3 {
+  margin: 0;
+  color: var(--gif-text);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.gif-picker-header p {
+  margin: 4px 0 0;
+  color: var(--gif-muted);
+  font-size: 12px;
+}
+
+.gif-picker-header button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gif-muted);
+  cursor: pointer;
+}
+
+.gif-picker-header button:hover {
+  background: var(--gif-hover);
+  color: var(--gif-text);
+}
+
+/* Search */
+.gif-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--gif-border);
+  border-radius: 10px;
+  background: var(--gif-surface);
+  color: var(--gif-muted);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gif-search:focus-within {
+  border-color: var(--gif-accent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--gif-accent) 15%, transparent);
+}
+
+.gif-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--gif-text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.gif-search input::placeholder {
+  color: var(--gif-muted);
+}
+
+.gif-search input::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.gif-search button {
+  flex-shrink: 0;
+  padding: 3px;
+  border: 0;
+  background: transparent;
+  color: var(--gif-accent);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Results */
+.gif-results {
+  min-height: 100px;
+  overflow-y: auto;
+  padding: 0 12px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gif-border) transparent;
+}
+
+.gif-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.gif-result {
+  position: relative;
+  height: 100px;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--gif-border);
+  border-radius: 8px;
+  background: var(--gif-surface);
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.gif-result:hover {
+  z-index: 1;
+  transform: scale(1.025);
+  border-color: var(--gif-accent);
+}
+
+.gif-result:focus-visible {
+  outline: 2px solid var(--gif-accent);
+  outline-offset: 2px;
+}
+
+.gif-result img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Loading, errors and empty states */
+.gif-state {
+  display: flex;
+  min-height: 110px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 16px;
+  color: var(--gif-muted);
+  font-size: 13px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.gif-spinner {
+  flex-shrink: 0;
+  animation: gif-spin 1s linear infinite;
+}
+
+/* Footer */
+.gif-picker-footer {
+  padding: 9px 12px;
+  border-top: 1px solid var(--gif-border);
+  background: var(--gif-surface);
+  color: var(--gif-muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .gif-picker {
+    width: min(340px, calc(100vw - 24px));
+    max-height: min(420px, 60dvh);
+  }
+
+  .gif-result {
+    height: 85px;
+  }
+}
+
+@keyframes gif-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gif-spinner {
+    animation-duration: 2s;
+  }
+
+  .gif-result {
+    transition: none;
+  }
+}
