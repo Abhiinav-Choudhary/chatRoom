@@ -3,24 +3,42 @@ import Message from "../models/message.model.js"; // if messages stored in DB
 import { io, getRoomMemberCount } from "../socket/socket.js";
 
 
+
 export const createRoom = async (req, res) => {
   try {
-   const { name, latitude, longitude, radius, durationMinutes } = req.body;
+    const {
+      name,
+      latitude,
+      longitude,
+      radius,
+      durationMinutes,
+      maxMembers,
+    } = req.body;
 
-let expiresAt = null;
+    // Optional room duration
+    let expiresAt = null;
 
-if (durationMinutes !== undefined && durationMinutes !== null && durationMinutes !== "") {
-  const duration = Number(durationMinutes);
+    if (
+      durationMinutes !== undefined &&
+      durationMinutes !== null &&
+      durationMinutes !== ""
+    ) {
+      const duration = Number(durationMinutes);
 
-  if (!Number.isInteger(duration) || duration < 1 || duration > 1440) {
-    return res.status(400).json({
-      message: "Duration must be between 1 and 1440 minutes.",
-    });
-  }
+      if (
+        !Number.isInteger(duration) ||
+        duration < 1 ||
+        duration > 1440
+      ) {
+        return res.status(400).json({
+          message: "Duration must be between 1 and 1440 minutes.",
+        });
+      }
 
-  expiresAt = new Date(Date.now() + duration * 60 * 1000);
-}
+      expiresAt = new Date(Date.now() + duration * 60 * 1000);
+    }
 
+    // Required field validation
     if (
       !name?.trim() ||
       latitude === undefined ||
@@ -51,10 +69,14 @@ if (durationMinutes !== undefined && durationMinutes !== null && durationMinutes
       });
     }
 
+    // Optional member limit
     let memberLimit = null;
 
-    // null/undefined means unlimited.
-    if (maxMembers !== undefined && maxMembers !== null && maxMembers !== "") {
+    if (
+      maxMembers !== undefined &&
+      maxMembers !== null &&
+      maxMembers !== ""
+    ) {
       memberLimit = Number(maxMembers);
 
       if (!Number.isInteger(memberLimit) || memberLimit < 1) {
@@ -73,7 +95,7 @@ if (durationMinutes !== undefined && durationMinutes !== null && durationMinutes
       },
       radius: radiusValue,
       maxMembers: memberLimit,
-      expiresAt
+      expiresAt,
     });
 
     return res.status(201).json(room);
@@ -85,6 +107,7 @@ if (durationMinutes !== undefined && durationMinutes !== null && durationMinutes
     });
   }
 };
+
 
 
 export const closeRoom = async (req, res) => {
