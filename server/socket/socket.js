@@ -12,6 +12,17 @@ let io;
 const roomUsers = Object.create(null);
 const socketRateMap = Object.create(null);
 
+
+export const getRoomMemberCount = (roomId) => {
+  const members = roomUsers[roomId];
+
+  if (!members) return 0;
+
+  return new Set(
+    [...members.values()].map((member) => member.userId.toString())
+  ).size;
+};
+
 // Rate limiter for individual socket events
 const isRateLimited = (
   socket,

@@ -1,6 +1,6 @@
 import ChatRoom from "../models/ChatRoom.js";
 import Message from "../models/message.model.js"; // if messages stored in DB
-import  {io}  from "../socket/socket.js";
+import { io, getRoomMemberCount } from "../socket/socket.js";
 
 
 export const createRoom = async (req, res) => {
@@ -171,23 +171,38 @@ export const getNearbyRooms = async (req, res) => {
         }
       },
       { $unwind: "$createdBy" },
-      {
-        $project: {
-          name: 1,
-          radius: 1,
-          distance: { $round: ["$distance", 0] },
-          createdBy: {
-            _id: 1,
-            username: 1
-          }
-        }
-      },
+     {
+  $project: {
+    name: 1,
+    radius: 1,
+    maxMembers: 1,
+    distance: { $round: ["$distance", 0] },
+    createdBy: {
+      _id: 1,
+      username: 1
+    }
+  }
+},
       {
         $sort: { distance: 1 }
       }
     ]);
 
-    res.json(rooms);
+    const roomsWithCapacity = rooms.map((room) => {
+  const currentMembers = getRoomMemberCount(room._id.toString());
+
+  return {
+    ...room,
+    currentMembers,
+    isFull:
+      room.maxMembers != null &&
+      currentMembers >= room.maxMembers,
+  };
+});
+
+res.json(roomsWithCapacity);
+
+    // res.json(rooms);
   } catch (error) {
     console.error(error);
     res.status(500).json({

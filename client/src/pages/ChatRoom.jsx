@@ -53,6 +53,9 @@ function ChatRoom() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  const [joinStatus, setJoinStatus] = useState("joining");
+const [joinError, setJoinError] = useState("");
+
   useEffect(() => {
     try {
       window.localStorage.setItem("chathub-chat-theme", theme);
@@ -114,63 +117,168 @@ function ChatRoom() {
     });
   }, [messages]);
 
-  useEffect(() => {
-    if (!roomId) return;
+  // useEffect(() => {
+  //   if (!roomId) return;
 
-    const joinRoom = () => {
-      socket.emit("join_room", { roomId });
-    };
+  //   const joinRoom = () => {
+  //     socket.emit("join_room", { roomId });
+  //   };
 
-    const handleRoomUsers = (data) => setUsers(data);
-    const handlePreviousMessages = (data) => setMessages(data);
+  //   const handleRoomUsers = (data) => setUsers(data);
+  //   const handlePreviousMessages = (data) => setMessages(data);
 
-    const handleReceiveMessage = (msg) => {
-      setMessages((prev) =>
-        prev.some((item) => item._id === msg._id)
-          ? prev
-          : [...prev, msg]
-      );
-    };
+  //   const handleReceiveMessage = (msg) => {
+  //     setMessages((prev) =>
+  //       prev.some((item) => item._id === msg._id)
+  //         ? prev
+  //         : [...prev, msg]
+  //     );
+  //   };
 
-    const handleRoomClosed = ({ message }) => {
-      window.alert(message);
-      navigate("/profile");
-    };
+  //   const handleRoomClosed = ({ message }) => {
+  //     window.alert(message);
+  //     navigate("/profile");
+  //   };
 
-    const handlePollUpdated = ({ messageId, poll }) => {
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg._id === messageId ? { ...msg, poll } : msg
-        )
-      );
-    };
+  //   const handlePollUpdated = ({ messageId, poll }) => {
+  //     setMessages((prev) =>
+  //       prev.map((msg) =>
+  //         msg._id === messageId ? { ...msg, poll } : msg
+  //       )
+  //     );
+  //   };
 
-    socket.on("connect", joinRoom);
-    socket.on("room_users", handleRoomUsers);
-    socket.on("previous_messages", handlePreviousMessages);
-    socket.on("receive_message", handleReceiveMessage);
-    socket.on("room_closed", handleRoomClosed);
-    socket.on("poll_updated", handlePollUpdated);
+  //   socket.on("connect", joinRoom);
+  //   socket.on("room_users", handleRoomUsers);
+  //   socket.on("previous_messages", handlePreviousMessages);
+  //   socket.on("receive_message", handleReceiveMessage);
+  //   socket.on("room_closed", handleRoomClosed);
+  //   socket.on("poll_updated", handlePollUpdated);
 
-    if (!socket.connected) {
-      socket.connect();
-    } else {
-      joinRoom();
+  //   if (!socket.connected) {
+  //     socket.connect();
+  //   } else {
+  //     joinRoom();
+  //   }
+
+  //   return () => {
+  //     if (socket.connected) {
+  //       socket.emit("leave_room", { roomId });
+  //     }
+
+  //     socket.off("connect", joinRoom);
+  //     socket.off("room_users", handleRoomUsers);
+  //     socket.off("previous_messages", handlePreviousMessages);
+  //     socket.off("receive_message", handleReceiveMessage);
+  //     socket.off("room_closed", handleRoomClosed);
+  //     socket.off("poll_updated", handlePollUpdated);
+  //   };
+  // }, [roomId, navigate]);
+
+  
+useEffect(() => {
+  if (!roomId) return;
+
+  let active = true;
+
+  setJoinStatus("joining");
+  setJoinError("");
+  setUsers([]);
+  setMessages([]);
+
+  const joinRoom = () => {
+    if (!active) return;
+
+    setJoinStatus("joining");
+    socket.emit("join_room", { roomId });
+  };
+
+  const handleJoinedRoom = (data) => {
+    if (!active || data?.roomId !== roomId) return;
+
+    setJoinStatus("joined");
+    setJoinError("");
+  };
+
+  const handleRoomFull = (data) => {
+    if (!active || data?.roomId !== roomId) return;
+
+    setJoinStatus("full");
+    setJoinError(
+      data.message || "This room is full. Please choose another room."
+    );
+
+    setUsers([]);
+    setMessages([]);
+  };
+
+  const handleRoomUsers = (data) => {
+    if (active) setUsers(data);
+  };
+
+  const handlePreviousMessages = (data) => {
+    if (active) setMessages(data);
+  };
+
+  const handleReceiveMessage = (msg) => {
+    if (!active) return;
+
+    setMessages((prev) =>
+      prev.some((item) => item._id === msg._id)
+        ? prev
+        : [...prev, msg]
+    );
+  };
+
+  const handleRoomClosed = ({ message }) => {
+    if (!active) return;
+
+    window.alert(message);
+    navigate("/profile");
+  };
+
+  const handlePollUpdated = ({ messageId, poll }) => {
+    if (!active) return;
+
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg._id === messageId ? { ...msg, poll } : msg
+      )
+    );
+  };
+
+  socket.on("connect", joinRoom);
+  socket.on("joined_room", handleJoinedRoom);
+  socket.on("room_full", handleRoomFull);
+  socket.on("room_users", handleRoomUsers);
+  socket.on("previous_messages", handlePreviousMessages);
+  socket.on("receive_message", handleReceiveMessage);
+  socket.on("room_closed", handleRoomClosed);
+  socket.on("poll_updated", handlePollUpdated);
+
+  if (!socket.connected) {
+    socket.connect();
+  } else {
+    joinRoom();
+  }
+
+  return () => {
+    active = false;
+
+    socket.off("connect", joinRoom);
+    socket.off("joined_room", handleJoinedRoom);
+    socket.off("room_full", handleRoomFull);
+    socket.off("room_users", handleRoomUsers);
+    socket.off("previous_messages", handlePreviousMessages);
+    socket.off("receive_message", handleReceiveMessage);
+    socket.off("room_closed", handleRoomClosed);
+    socket.off("poll_updated", handlePollUpdated);
+
+    if (socket.connected) {
+      socket.emit("leave_room", { roomId });
     }
-
-    return () => {
-      if (socket.connected) {
-        socket.emit("leave_room", { roomId });
-      }
-
-      socket.off("connect", joinRoom);
-      socket.off("room_users", handleRoomUsers);
-      socket.off("previous_messages", handlePreviousMessages);
-      socket.off("receive_message", handleReceiveMessage);
-      socket.off("room_closed", handleRoomClosed);
-      socket.off("poll_updated", handlePollUpdated);
-    };
-  }, [roomId, navigate]);
+  };
+}, [roomId, navigate]);
 
   const sendMessage = () => {
     if (!input.trim() || !socket.connected) return;
@@ -303,6 +411,28 @@ function ChatRoom() {
       </div>
     );
   }
+
+  if (joinStatus === "full") {
+  return (
+    <div className="chatroom-state">
+      <Users size={36} />
+      <h2>Room is full</h2>
+      <p>{joinError}</p>
+      <button onClick={() => navigate("/profile")}>
+        Back to nearby rooms
+      </button>
+    </div>
+  );
+}
+
+if (joinStatus !== "joined") {
+  return (
+    <div className="chatroom-state">
+      <LoaderCircle className="state-spinner" size={30} />
+      <p>Checking room availability...</p>
+    </div>
+  );
+}
 
   return (
     <main className="chatroom-container" data-theme={theme}>

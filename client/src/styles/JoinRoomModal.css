@@ -638,3 +638,37 @@
     transition: none;
   }
 }
+
+.join-room-member-count {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.join-room-capacity {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.join-room-capacity.is-available {
+  color: #15803d;
+  background: #dcfce7;
+}
+
+.join-room-capacity.is-full {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.join-room-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}

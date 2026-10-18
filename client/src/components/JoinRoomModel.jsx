@@ -310,37 +310,61 @@ const fetchNearbyRooms = () => {
 
           {!isLoading && rooms.length > 0 && (
             <ul className="join-rooms-list">
-              {rooms.map((room) => (
-                <li key={room._id} className="join-room-item">
-                  <div className="join-room-avatar">
-                    <MessageCircle size={20} />
-                  </div>
+              {rooms.map((room) => {
+  const isFull = room.isFull;
+  const memberLabel =
+    room.maxMembers == null
+      ? `${room.currentMembers ?? 0} members`
+      : `${room.currentMembers ?? 0}/${room.maxMembers} members`;
 
-                  <div className="join-room-info">
-                    <p className="join-room-name">{room.name}</p>
-                    <span className="join-room-distance">
-                      <MapPin size={12} />
-                      {formatDistance(room.distance)}
-                    </span>
-                  </div>
+  return (
+    <li key={room._id} className="join-room-item">
+      <div className="join-room-avatar">
+        <MessageCircle size={20} />
+      </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleJoin(room._id)}
-                    className="join-room-btn"
-                    disabled={Boolean(joiningRoomId)}
-                  >
-                    {joiningRoomId === room._id ? (
-                      <LoaderCircle size={16} className="join-spinner" />
-                    ) : (
-                      <>
-                        Join
-                        <ArrowRight size={15} />
-                      </>
-                    )}
-                  </button>
-                </li>
-              ))}
+      <div className="join-room-info">
+        <p className="join-room-name">{room.name}</p>
+
+        <span className="join-room-distance">
+          <MapPin size={12} />
+          {formatDistance(room.distance)}
+        </span>
+
+        <span className="join-room-member-count">
+          <Users size={13} />
+          {memberLabel}
+        </span>
+
+        <span
+          className={`join-room-capacity ${
+            isFull ? "is-full" : "is-available"
+          }`}
+        >
+          {isFull ? "Full" : "Available"}
+        </span>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => handleJoin(room._id)}
+        className="join-room-btn"
+        disabled={Boolean(joiningRoomId) || isFull}
+      >
+        {joiningRoomId === room._id ? (
+          <LoaderCircle size={16} className="join-spinner" />
+        ) : isFull ? (
+          "Full"
+        ) : (
+          <>
+            Join
+            <ArrowRight size={15} />
+          </>
+        )}
+      </button>
+    </li>
+  );
+})}
             </ul>
           )}
         </div>
